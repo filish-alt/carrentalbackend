@@ -16,57 +16,57 @@ class Users extends Authenticatable
  *
  * @var array<int, string>
  */
-    protected $fillable = [
-        'first_name',
-        'last_name',
-        'email',
-        'hash_password',
-        'phone_number',
-        'address',
-        'city',
-        'birth_date',
-        'sso_id',
-        'digtal_id',
-        'license'
+protected $fillable = [
+    'first_name',
+    'last_name',
+    'email',
+    'phone',
+    'hash_password',
+    'digital_id',
+    'profile_picture',
+    'driver_liscence',
+    'role',
+    'status',
+    'Adress',            
+    'city',
+    'Birth_Date',      
+    'otp',
+    'otp_expires_at',
+    'sso_id',
+];
 
-    ];
-
-       /**
+protected $casts = [
+    'profile_picture' => 'array',
+    'Birth_Date' => 'date',
+    'otp_expires_at' => 'datetime',
+];
+  /**
      * The attributes that should be hidden for arrays.
      *
-     * @var array<int, string>
+     
      */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+protected $hidden = [
+    'hash_password',
+    'otp',
+];
 
-       /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
-   
      /**
-     * Get the URL for the scanning ID file.
+     * Get the URL for the driver's license file.
      *
      * @return string|null
      */
-    public function getlicesncseUrlAttribute()
+    public function getDriverLicenceUrlAttribute()
     {
-        return $this->licesncse_id ? Storage::url($this->license) : null;
+        return $this->driver_liscence ? Storage::url($this->driver_liscence) : null;
     }
 
-    /**
-     * Get the URL for the scanning ID file.
+  /**
+     * Get the URL for the digital ID file.
      *
      * @return string|null
      */
-    public function getDigtalIdUrlAttribute()
+    public function getDigitalIdUrlAttribute()
     {
-        return $this->digtal_id ? Storage::url($this->digtal_id) : null;
+        return $this->digital_id ? Storage::url($this->digital_id) : null;
     }
 }

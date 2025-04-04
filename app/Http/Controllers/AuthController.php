@@ -4,107 +4,136 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Facades\Validator;
+use App\Models\Users;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
     public function register(Request $request) 
-     {
-        $request ->validate([
-            'first_name'=> 'required|string',
-            'last_name'=> 'required|string',
-            'email'=> 'required|string',
-            'phone'=> 'required|string',
-            'address'=> 'nullable|string',
-            'city'=> 'required|string',
-            'birth_date'=> 'required|date',
-            'digtal_id' => 'required|file|mimes:jpg,png,pdf|max:2048', // Limit to 2MB
-            'license' => 'nullable|file|mimes:jpg,png,pdf|max:2048' // Limit to 2MB
-    
-       ]);
+     { 
+        Log::info('=== Incoming Request ===');
+        Log::info($request->all());
+        $validator = Validator::make($request->all(), [
+            'first_name'       => 'required|string|max:255',
+            'last_name'        => 'required|string|max:255',
+            'email'            => 'required|email|unique:users,email',
+            'phone'            => 'required|regex:/^09\d{8}$/|unique:users,phone', 
+            'password'         => 'required|string|min:6|confirmed', // must send 'password_confirmation'
+            'driver_liscence'  => 'nullable|file|mimes:jpg,jpeg,png,pdf',
+            'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf',
+            'address'          => 'nullable|string|max:255',
+            'city'             => 'nullable|string|max:100',
+            'birth_date'       => 'nullable|date',
+            'role'             => 'nullable',
+        ]);
 
-        $otp = rand(100000, 999999); 
-        $otpExpiry = now()->addMinutes(10);
-
-        // Store the uploaded file in the 'public/scanning_ids' directory
-        $filePath = $request->file('digtal_id') 
-        ? $request->file('digtal_id')->store('digtal_ids', 'public') 
-        : null;
-       
         
-        $licensePath = $request->file('license')
-            ? $request->file('license')->store('licenses', 'public')
-            : null;
-        $user = Users::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'user' => $request->first_name,
-            'address' => $request->address,
-            'city' => $request->city,
-            'birth_date' => $request->birth_date, 
-            'license' => $licensePath,
-            'otp' => $otp,
-            'otp_expires_at' => $otpExpiry,
-            'digtal_id' =>$filePath,
-        ]);
-
-        //replace the real otp service
-        $response = Http::post('https://example-otp-api.com/send', [
-            'phone' => $request->phone,
-            'otp' => $otp
-        ]);
-        return response()->json(['message' => 'OTP sent to your phone.', 'otp' => $otp]);
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-  public function verifyOtp(Request $request){
+               
+            $driverLiscencePath = $request->file('driver_liscence') 
+                ? $request->file('driver_liscence')->store('driver_licences') 
+                : null;
+
+            $digitalIdPath = $request->file('digital_id') 
+                ? $request->file('digital_id')->store('digital_ids') 
+                : null;
+    $otp = rand(100000, 999999);
+   
+
+    // Create user
+    $user = Users::create([
+        'first_name'      => $request->first_name,
+        'last_name'       => $request->last_name,
+        'email'           => $request->email,
+        'phone'           => $request->phone,
+        'hash_password'   =>  Hash::make($request->password),
+        'digital_id'      => $digitalIdPath,
+        'driver_liscence' => $driverLiscencePath,
+        'address'         => $request->address,
+        'city'            => $request->city,
+        'Birth_Date'      => $request->birth_date,
+        'role'            => $request->role,
+        'status'          => 'Pending',
+        'otp'             => $otp,
+        'otp_expires_at'  => now()->addMinutes(5),
+    ]);
+    
+      // Simulate sending OTP 
+      Log::info("OTP for {$user->phone}: {$otp}");
+    return response()->json([
+        'message' => 'User registered successfully.',
+        'user' => $user
+    ], 201);
+}
+        
+
+public function verifyPhoneOtp(Request $request)
+{
     $request->validate([
-        'phone' => 'required|string',
-        'otp' => 'required|digits:6'
+        'phone' => 'required|regex:/^09\d{8}$/',
+        'otp'   => 'required|string|size:6',
     ]);
 
     $user = Users::where('phone', $request->phone)
-                    ->where('otp', $request->otp)
-                    ->where('otp_expires_at', '>', now())
-                    ->first();
+        ->where('otp', $request->otp)
+        ->where('otp_expires_at', '>', now())
+        ->first();
 
-        if (!$user) {
-            return response()->json(['message' => 'Invalid OTP or expired.'], 400);
-        }
-        $user->update([
-            'otp' => null, 
-            'otp_expires_at' => null,
-        ]);
-
-        return response()->json(['message' => 'OTP verified successfully.', 'user' => $user]);
-  }
-
-
-public function redirectToGoogle()
-    {
-        // Socialite is a Laravel package that simplifies OAuth authentication with third-party services
-        return Socialite::driver('google')->redirect();
+    if (!$user) {
+        return response()->json(['message' => 'Invalid or expired OTP.'], 400);
     }
 
-    public function handleGoogleCallback()
-    {
-        $googleUser = Socialite::driver('google')->user();
+    $user->otp = null;
+    $user->otp_expires_at = null;
+    $user->status = 'Approved'; 
+    $user->save();
 
-        // Check if user exists
-        $user = Users::where('email', $googleUser->getEmail())->first();
+    return response()->json([
+        'message' => 'Phone number verified successfully.',
+        'user' => $user,
+    ]);
+}
 
-        if (!$user) {
-            $user = User::create([
-                'first_name' => explode(' ', $googleUser->getName())[0],
-                'last_name' => explode(' ', $googleUser->getName())[1] ?? '',
-                'email' => $googleUser->getEmail(),
-                'google_id' => $googleUser->getId(),
-                'password' => null,
-            ]);
-            
-        }
-        $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json(['message' => 'Google login successful.', 'token' => $token]);
+
+public function login(Request $request)
+{
+    $request->validate([
+        'phone' => 'required|string',
+        'password' => 'required|string',
+    ]);
+
+    $user = Users::where('phone', $request->phone)->first();
+    Log::info('=== Incoming Request ===');
+    Log::info($request->all());
+    
+    if (! $user || ! Hash::check($request->password, $user->hash_password)) {
+        return response()->json(['message' => 'Invalid credentials'], 401);
     }
+   
+    // Optional: Check if OTP verification is required
+    if ($user->otp && $user->otp_expires_at && now()->lessThan($user->otp_expires_at)) {
+        return response()->json(['message' => 'Phone number not verified. Please enter the OTP sent to your phone.'], 403);
+    }
+
+    // Login success: issue token (here we'll use Laravel Sanctum token for example)
+    $token = $user->createToken('auth_token')->plainTextToken;
+
+    return response()->json([
+        'message' => 'Login successful',
+        'user' => $user,
+        'token' => $token,
+    ]);
+}
+
 }
