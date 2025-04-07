@@ -2,6 +2,7 @@
 <?php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\SSOController;
 use App\Http\Controllers\PasswordResetController;
 use Laravel\Socialite\Facades\Socialite;
@@ -18,3 +19,8 @@ Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']
 
 
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/users', [UserController::class, 'getAllUsers']);
+    Route::get('/users/{id}', [UserController::class, 'getUserById']);
+    Route::put('/users/{id}', [UserController::class, 'updateUser']);
+});

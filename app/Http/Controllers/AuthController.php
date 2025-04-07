@@ -61,7 +61,7 @@ class AuthController extends Controller
         'driver_liscence' => $driverLiscencePath,
         'address'         => $request->address,
         'city'            => $request->city,
-        'Birth_Date'      => $request->birth_date,
+        'birth_Date'      => $request->birth_date,
         'role'            => $request->role,
         'status'          => 'Pending',
         'otp'             => $otp,

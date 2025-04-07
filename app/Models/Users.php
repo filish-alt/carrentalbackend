@@ -27,9 +27,9 @@ protected $fillable = [
     'driver_liscence',
     'role',
     'status',
-    'Adress',            
+    'address',            
     'city',
-    'Birth_Date',      
+    'birth_date',      
     'otp',
     'otp_expires_at',
     'sso_id',
@@ -37,7 +37,7 @@ protected $fillable = [
 
 protected $casts = [
     'profile_picture' => 'array',
-    'Birth_Date' => 'date',
+    'birth_date' => 'date',
     'otp_expires_at' => 'datetime',
 ];
   /**
