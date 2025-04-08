@@ -23,7 +23,7 @@ class AuthController extends Controller
             'last_name'        => 'required|string|max:255',
             'email'            => 'required|email|unique:users,email',
             'phone'            => 'required|regex:/^09\d{8}$/|unique:users,phone', 
-            'password'         => 'required|string|min:6|confirmed', // must send 'password_confirmation'
+            'password'         => 'required|string|min:6|confirmed', 
             'driver_liscence'  => 'nullable|file|mimes:jpg,jpeg,png,pdf',
             'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf',
             'address'          => 'nullable|string|max:255',
@@ -95,7 +95,6 @@ public function verifyPhoneOtp(Request $request)
 
     $user->otp = null;
     $user->otp_expires_at = null;
-    $user->status = 'Approved'; 
     $user->save();
 
     return response()->json([
@@ -121,12 +120,9 @@ public function login(Request $request)
         return response()->json(['message' => 'Invalid credentials'], 401);
     }
    
-    // Optional: Check if OTP verification is required
     if ($user->otp && $user->otp_expires_at && now()->lessThan($user->otp_expires_at)) {
         return response()->json(['message' => 'Phone number not verified. Please enter the OTP sent to your phone.'], 403);
     }
-
-    // Login success: issue token (here we'll use Laravel Sanctum token for example)
     $token = $user->createToken('auth_token')->plainTextToken;
 
     return response()->json([
