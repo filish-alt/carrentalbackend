@@ -15,4 +15,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users', [UserController::class, 'getAllUsers']);
     Route::get('/users/{id}', [UserController::class, 'getUserById']);
     Route::put('/users/{id}', [UserController::class, 'updateUser']);
+    Route::apiResource('cars', CarController::class);
+    Route::apiResource('vehicle-inspections', VehicleInspectionController::class);
+    Route::apiResource('vehicle-categories', VehicleCategoryController::class);
 });
