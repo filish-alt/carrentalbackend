@@ -23,6 +23,7 @@ protected $fillable = [
     'phone',
     'hash_password',
     'digital_id',
+    'id_card_back',
     'profile_picture',
     'driver_liscence',
     'role',

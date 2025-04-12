@@ -26,6 +26,7 @@ class AuthController extends Controller
             'password'         => 'required|string|min:6|confirmed', 
             'driver_liscence'  => 'nullable|file|mimes:jpg,jpeg,png,pdf',
             'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf',
+            'id_card_back'     => 'nullable|file|mimes:jpg,jpeg,png,pdf',
             'address'          => 'nullable|string|max:255',
             'city'             => 'nullable|string|max:100',
             'birth_date'       => 'nullable|date',
@@ -47,6 +48,10 @@ class AuthController extends Controller
             $digitalIdPath = $request->file('digital_id') 
                 ? $request->file('digital_id')->store('digital_ids') 
                 : null;
+
+            $digitalIdback = $request->file('id_card_back') 
+                ? $request->file('id_card_back')->store('id_card_back') 
+                : null;
     $otp = rand(100000, 999999);
    
 
@@ -58,6 +63,7 @@ class AuthController extends Controller
         'phone'           => $request->phone,
         'hash_password'   =>  Hash::make($request->password),
         'digital_id'      => $digitalIdPath,
+        'id_card_back'    => $digitalIdback,
         'driver_liscence' => $driverLiscencePath,
         'address'         => $request->address,
         'city'            => $request->city,
@@ -69,7 +75,7 @@ class AuthController extends Controller
     ]);
     
       // Simulate sending OTP 
-      Log::info("OTP for {$user->phone}: {$otp}");
+    Log::info("OTP for {$user->phone}: {$otp}");
     return response()->json([
         'message' => 'User registered successfully.',
         'user' => $user
@@ -130,6 +136,25 @@ public function login(Request $request)
         'user' => $user,
         'token' => $token,
     ]);
+}
+
+public function updatePassword(Request $request)
+{
+    $request->validate([
+        'current_password' => 'required|string',
+        'new_password' => 'required|string|min:6|confirmed',
+    ]);
+
+    $user = Auth::user();
+    echo $user->name;
+    if (!Hash::check($request->current_password, $user->hash_password)) {
+        return response()->json(['message' => 'Current password is incorrect'], 403);
+    }
+
+    $user->hash_password = Hash::make($request->new_password);
+    $user->save();
+
+    return response()->json(['message' => 'Password updated successfully']);
 }
 
 }

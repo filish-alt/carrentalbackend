@@ -39,12 +39,12 @@ class SSOController extends Controller
                     'phone' => '',
                     'role' => 'user',
                     'digital_id' => '',
+                    'driver_liscence' => '',
                     'sso_id' => $googleUser->getId()
 
                 ]);
             }
     
-            // Generate Sanctum token
             $token = $user->createToken('google-login-token')->plainTextToken;
     
             return response()->json([
