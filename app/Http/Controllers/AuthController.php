@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+
 
 class AuthController extends Controller
 {
@@ -67,9 +69,17 @@ class AuthController extends Controller
         'otp'             => $otp,
         'otp_expires_at'  => now()->addMinutes(5),
     ]);
+
+    // Send OTP to email
+    if ($user->email) {
+        Mail::raw("Your registration OTP is: $otp", function ($message) use ($user) {
+            $message->to($user->email)
+                    ->subject('Account Verification OTP');
+        });
+    }
     
-      // Simulate sending OTP 
-      Log::info("OTP for {$user->phone}: {$otp}");
+    // Simulate sending OTP 
+    Log::info("OTP for {$user->phone}: {$otp}");
     return response()->json([
         'message' => 'User registered successfully.',
         'user' => $user
@@ -131,5 +141,13 @@ public function login(Request $request)
         'token' => $token,
     ]);
 }
-
+public function logout(Request $request)
+{
+    $user = Auth::user();
+    if ($user) {
+        $user->tokens()->delete();
+        return response()->json(['message' => 'Logged out successfully.']);
+    }
+    return response()->json(['message' => 'User not found.'], 404);
+}
 }
