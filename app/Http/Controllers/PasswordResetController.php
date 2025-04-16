@@ -28,7 +28,7 @@ class PasswordResetController extends Controller
 
         //$token = Str::random(64);
         $code = rand(100000, 999999);
-        Redis::setex('password_reset:' . $request->email, 3600, $code);
+        Redis::setex('password_reset:' . $request->identifier, 3600, $code);
        
       //  $resetLink = url('/api/reset-password?token=' . $token . '&identifier=' . $identifier);
     
@@ -73,7 +73,7 @@ class PasswordResetController extends Controller
             return response()->json(['error' => 'User not found'], 404);
         }
 
-        $user->password = Hash::make($request->password); 
+        $user->hash_password = Hash::make($request->password); 
         $user->save();
 
         Redis::del('password_reset:' . $request->identifier);

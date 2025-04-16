@@ -10,6 +10,32 @@ use App\Models\Users;
 
 class UserController extends Controller
 {
+ // update user profile picture
+public function updateProfilePicture(Request $request)
+  {
+    $request->validate([
+        'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+    ]);
+
+    $user = auth()->user();
+
+    // Store the uploaded image
+    $path = $request->file('profile_picture')->store('profile_pictures', 'public');
+
+    //  delete old picture
+    if ($user->profile_picture) {
+        Storage::disk('public')->delete($user->profile_picture);
+    }
+
+    // Save the new path
+    $user->profile_picture = $path;
+    $user->save();
+
+    return response()->json([
+        'message' => 'Profile picture updated successfully',
+        'profile_picture_url' => asset('storage/' . $path),
+    ]);
+}
     // Get all users
     public function getAllUsers()
     {
@@ -90,4 +116,51 @@ class UserController extends Controller
             'user' => $user,
         ]);
     }
+
+    public function verify2FA(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'otp' => 'required',
+        ]);
+    
+        $storedOtp = Redis::get("2fa:{$request->user_id}");
+    
+        if (!$storedOtp || $storedOtp !== $request->otp) {
+            return response()->json(['error' => 'Invalid or expired OTP'], 400);
+        }
+    
+        $user = Users::find($request->user_id);
+        $token = $user->createToken('auth_token')->plainTextToken;
+    
+        Redis::del("2fa:{$request->user_id}");
+    
+        return response()->json([
+            'message' => 'Two-factor verification successful',
+            'token' => $token,
+        ]);
+    }
+    
+//toggle two factor code
+    public function toggleTwoFactor(Request $request)
+        {
+            $user = auth()->user();
+        
+            $user->two_factor_enabled = !$user->two_factor_enabled;
+            $user->save();
+        
+            return response()->json([
+                'message' => 'Two-factor authentication ' . ($user->two_factor_enabled ? 'enabled' : 'disabled'),
+            ]);
+        }
+        
+//soft delete
+public function deleteAccount(Request $request)
+{
+    $user = auth()->user();
+    $user->delete(); 
+
+    return response()->json(['message' => 'Your account has been deleted and is pending permanent removal.']);
+}
+
 }

@@ -7,6 +7,12 @@ use Illuminate\Support\Facades\Http;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Users;
+
+
+use Illuminate\Support\Facades\Redis;
+
+use Illuminate\Support\Facades\Mail;
+
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -26,7 +32,7 @@ class AuthController extends Controller
             'password'         => 'required|string|min:6|confirmed', 
             'driver_liscence'  => 'nullable|file|mimes:jpg,jpeg,png,pdf',
             'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-            'id_card_back'     => 'nullable|file|mimes:jpg,jpeg,png,pdf',
+            'passport'         => 'nullable|file|mimes:jpg,jpeg,png,pdf',
             'address'          => 'nullable|string|max:255',
             'city'             => 'nullable|string|max:100',
             'birth_date'       => 'nullable|date',
@@ -49,8 +55,8 @@ class AuthController extends Controller
                 ? $request->file('digital_id')->store('digital_ids') 
                 : null;
 
-            $digitalIdback = $request->file('id_card_back') 
-                ? $request->file('id_card_back')->store('id_card_back') 
+            $passport = $request->file('passport') 
+                ? $request->file('passport')->store('passport') 
                 : null;
     $otp = rand(100000, 999999);
    
@@ -63,7 +69,7 @@ class AuthController extends Controller
         'phone'           => $request->phone,
         'hash_password'   =>  Hash::make($request->password),
         'digital_id'      => $digitalIdPath,
-        'id_card_back'    => $digitalIdback,
+        'passport'        => $passport,
         'driver_liscence' => $driverLiscencePath,
         'address'         => $request->address,
         'city'            => $request->city,
@@ -129,6 +135,24 @@ public function login(Request $request)
     if ($user->otp && $user->otp_expires_at && now()->lessThan($user->otp_expires_at)) {
         return response()->json(['message' => 'Phone number not verified. Please enter the OTP sent to your phone.'], 403);
     }
+
+    if ($user->two_factor_enabled) {
+        $otp = rand(100000, 999999);
+        Redis::setex("2fa:{$user->id}", 300, $otp); // 5 mins expiry
+
+        // Send OTP via email
+        Mail::to($user->email)->send(new \App\Mail\TwoFactorCodeMail($otp));
+       
+        // Send via phone (SMS)
+         Log::info("your 2fa code {$otp}");
+
+        return response()->json([
+            'message' => 'Two-factor code sent',
+            'two_factor_pending' => true,
+            'user_id' => $user->id,
+        ]);
+    }
+    
     $token = $user->createToken('auth_token')->plainTextToken;
 
     return response()->json([
