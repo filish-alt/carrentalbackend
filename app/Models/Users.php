@@ -44,6 +44,7 @@ protected $casts = [
     'profile_picture' => 'array',
     'birth_date' => 'date',
     'otp_expires_at' => 'datetime',
+    'notification_preferences' => 'array',
 ];
   /**
      * The attributes that should be hidden for arrays.
@@ -81,5 +82,11 @@ protected $dates = ['two_factor_expires_at'];
     {
         return $this->hasMany(PaymentMethod::class, 'user_id');
     }
+    // Notification relationship
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id');
+    }
+
 
 }

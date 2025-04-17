@@ -13,6 +13,7 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\LandingContentController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\PaymentMethodController;
+use App\Http\Controllers\NotificationController;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
@@ -82,4 +83,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/payment-methods/{id}', [PaymentMethodController::class, 'update']);
     Route::delete('/payment-methods/{id}', [PaymentMethodController::class, 'destroy']);
     Route::get('/users/{userId}/payment-methods', [PaymentMethodController::class, 'getByUserId']);
+
+    Route::get('/users/{id}/notifications', [NotificationController::class, 'getByUserId']);
+    Route::post('/notifications', [NotificationController::class, 'store']);
+    Route::patch('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    Route::put('/user/notifications/preferences', [NotificationController::class, 'updatePreferences']);
 });
