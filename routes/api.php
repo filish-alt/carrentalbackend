@@ -8,6 +8,7 @@ use App\Http\Controllers\CarController;
 use App\Http\Controllers\VehicleInspectionController;
 use App\Http\Controllers\VehicleCategoryController;
 use App\Http\Controllers\SSOController;
+use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ReviewController;
 use Laravel\Socialite\Facades\Socialite;
@@ -45,6 +46,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::get('/my-reviews', [ReviewController::class, 'myReviews']);
     Route::get('/my-car-reviews', [ReviewController::class, 'reviewsForMyCars']);
+
+    Route::post('/booking', [BookingController::class, 'store']);
 
     Route::get('/users', [UserController::class, 'getAllUsers']);
     Route::get('/users/{id}', [UserController::class, 'getUserById']);
