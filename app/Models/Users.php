@@ -76,4 +76,10 @@ protected $dates = ['two_factor_expires_at'];
     {
         return $this->digital_id ? Storage::url($this->digital_id) : null;
     }
+
+    public function paymentMethods()
+    {
+        return $this->hasMany(PaymentMethod::class, 'user_id');
+    }
+
 }

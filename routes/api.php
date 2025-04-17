@@ -12,6 +12,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\LandingContentController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\PaymentMethodController;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
@@ -74,4 +75,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/cars', CarController::class);
     Route::apiResource('/vehicle-inspections', VehicleInspectionController::class);
     Route::apiResource('/vehicle-categories', VehicleCategoryController::class);
+
+    Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
+    Route::post('/payment-methods', [PaymentMethodController::class, 'store']);
+    Route::get('/payment-methods/{id}', [PaymentMethodController::class, 'show']);
+    Route::put('/payment-methods/{id}', [PaymentMethodController::class, 'update']);
+    Route::delete('/payment-methods/{id}', [PaymentMethodController::class, 'destroy']);
+    Route::get('/users/{userId}/payment-methods', [PaymentMethodController::class, 'getByUserId']);
 });
