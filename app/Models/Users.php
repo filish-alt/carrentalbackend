@@ -31,13 +31,15 @@ protected $fillable = [
     'driver_liscence',
     'role',
     'status',
-    'address',            
+    'address',
     'city',
-    'birth_date',      
+    'birth_date',
     'otp',
     'otp_expires_at',
     'sso_id',
     'two_factor_enabled',
+    'email_verification_token',
+    'email_verified_at'
 ];
 
 protected $casts = [
@@ -45,6 +47,7 @@ protected $casts = [
     'birth_date' => 'date',
     'otp_expires_at' => 'datetime',
     'notification_preferences' => 'array',
+    'email_verified_at' => 'datetime'
 ];
   /**
      * The attributes that should be hidden for arrays.

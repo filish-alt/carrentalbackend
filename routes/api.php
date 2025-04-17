@@ -14,6 +14,7 @@ use App\Http\Controllers\LandingContentController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\VerificationController;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
@@ -89,4 +90,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
     Route::put('/user/notifications/preferences', [NotificationController::class, 'updatePreferences']);
+
+    Route::get('/user/verification/status', [VerificationController::class, 'status']);
+    Route::post('/user/verification/id', [VerificationController::class, 'submitId']);
+    Route::post('/user/verification/payment', [VerificationController::class, 'verifyPayment']);
+    Route::post('/user/verification/car', [VerificationController::class, 'submitCar']);
+    Route::post('/user/verification/send-otp', [VerificationController::class, 'sendOtp']);
+    Route::post('/user/verification/phone', [VerificationController::class, 'verifyPhone']);
+    Route::post('/user/verification/send-email-token', [VerificationController::class, 'sendEmailVerification']);
+    Route::post('/user/verification/email', [VerificationController::class, 'verifyEmail']);
+    Route::post('/user/verification/payment', [VerificationController::class, 'verifyPayment']);
+    Route::put('/user/verification/status', [VerificationController::class, 'updateStatus']);
 });
