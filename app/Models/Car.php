@@ -20,4 +20,9 @@ class Car extends Model
     {
         return $this->hasMany(VehicleInspection::class);
     }
+    public function maintenanceRecords()
+{
+    return $this->hasMany(MaintenanceRecord::class);
+}
+
 }

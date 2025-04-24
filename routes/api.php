@@ -12,6 +12,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ReviewController;
 use Laravel\Socialite\Facades\Socialite;
+use App\Http\Controllers\MaintenanceRecordController;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
 
@@ -47,8 +48,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-reviews', [ReviewController::class, 'myReviews']);
     Route::get('/my-car-reviews', [ReviewController::class, 'reviewsForMyCars']);
 
-    Route::post('/booking', [BookingController::class, 'store']);
 
+    Route::get('/maintenance', [MaintenanceRecordController::class, 'index']);        
+    Route::post('/maintenance', [MaintenanceRecordController::class, 'store']);       
+    Route::get('/maintenance/{id}', [MaintenanceRecordController::class, 'show']);     
+    Route::put('/maintenance/{id}', [MaintenanceRecordController::class, 'update']);  
+    
+
+    Route::post('/booking', [BookingController::class, 'store']);
+    
     Route::get('/users', [UserController::class, 'getAllUsers']);
     Route::get('/users/{id}', [UserController::class, 'getUserById']);
     Route::put('/users/{id}', [UserController::class, 'updateUser']);
