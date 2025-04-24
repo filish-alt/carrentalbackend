@@ -11,10 +11,12 @@ use App\Http\Controllers\SSOController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\LandingContentController;
 use Laravel\Socialite\Facades\Socialite;
 use App\Http\Controllers\MaintenanceRecordController;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
+
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/verify-phone-otp', [AuthController::class, 'verifyPhoneOtp']);

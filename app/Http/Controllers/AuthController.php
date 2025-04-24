@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+
 
 class AuthController extends Controller
 {
@@ -79,6 +81,14 @@ class AuthController extends Controller
         'otp'             => $otp,
         'otp_expires_at'  => now()->addMinutes(5),
     ]);
+
+    // Send OTP to email
+    if ($user->email) {
+        Mail::raw("Your registration OTP is: $otp", function ($message) use ($user) {
+            $message->to($user->email)
+                    ->subject('Account Verification OTP');
+        });
+    }
     
       // Simulate sending OTP 
     Log::info("OTP for {$user->phone}: {$otp}");
@@ -160,25 +170,6 @@ public function login(Request $request)
         'user' => $user,
         'token' => $token,
     ]);
-}
-
-public function updatePassword(Request $request)
-{
-    $request->validate([
-        'current_password' => 'required|string',
-        'new_password' => 'required|string|min:6|confirmed',
-    ]);
-
-    $user = Auth::user();
-    echo $user->name;
-    if (!Hash::check($request->current_password, $user->hash_password)) {
-        return response()->json(['message' => 'Current password is incorrect'], 403);
-    }
-
-    $user->hash_password = Hash::make($request->new_password);
-    $user->save();
-
-    return response()->json(['message' => 'Password updated successfully']);
 }
 
 }
