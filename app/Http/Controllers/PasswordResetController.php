@@ -7,23 +7,47 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use App\Models\Users;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PasswordResetController extends Controller
 {
-    public function sendResetLink(Request $request)
+    public function sendResetCode(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|exists:users,email',
+            'identifier' => 'required',
         ]);
-
-        $token = Str::random(64);
-
-        Redis::setex('password_reset:' . $request->email, 3600, $token); 
-
        
+        $identifier = $request->identifier;
+        $user = Users::where('email', $identifier)
+                    ->orWhere('phone', $identifier)
+                    ->first();
+
+        if (! $user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        //$token = Str::random(64);
+        $code = rand(100000, 999999);
+        Redis::setex('password_reset:' . $request->identifier, 3600, $code);
+       
+      //  $resetLink = url('/api/reset-password?token=' . $token . '&identifier=' . $identifier);
+    
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            Log::info("OTP for {$user->email}: {$code}");
+            // Mail::raw("Your code is: $otp", function ($message) use ($identifier) {
+            //     $message->to($identifier)
+            //             ->subject('Your Password Reset OTP');
+            // });
+        } else {
+            Log::info("OTP for {$user->phone_number}: {$code}");
+            // Http::post('https://your-sms-api.com/send', [
+            //     'phone' => $identifier,
+            //     'message' => "Your password rest code is : $resetLink"
+            // ]);
+        }
+
         return response()->json([
-            'message' => 'Reset link sent.',
-            'reset_link' => url('/api/reset-password?token=' . $token . '&email=' . $request->email)
+            'message' => 'code sent successfully.',
         ]);
     }
     public function forgotPassword(Request $request)
@@ -51,24 +75,31 @@ class PasswordResetController extends Controller
  public function resetPassword(Request $request)
  {
     $request->validate([
-        'email' => 'required|email|exists:users,email',
-        'token' => 'required',
+        'identifier' => 'required',
+        'code' => 'required|digits:6',
         'password' => 'required|confirmed|min:6',
     ]);
 
-    $storedToken = Redis::get('password_reset:' . $request->email);
+    $storedCode = Redis::get('password_reset:' . $request->identifier);
 
-    if (! $storedToken || ! hash_equals($storedToken, $request->token)) {
-        return response()->json(['error' => 'Invalid or expired token'], 400);
+    if (! $storedCode || $storedCode != $request->code) {
+        return response()->json(['error' => 'Invalid or expired code'], 400);
     }
 
-    $user = Users::where('email', $request->email)->first();
-    $user->hash_password = Hash::make($request->password);
-    $user->save();
+    $user = Users::where('email', $request->identifier)
+                    ->orWhere('phone', $request->identifier)
+                    ->first();
 
-    Redis::del('password_reset:' . $request->email);
+        if (! $user) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
 
-    return response()->json(['message' => 'Password reset successfully']);
+        $user->hash_password = Hash::make($request->password); 
+        $user->save();
+
+        Redis::del('password_reset:' . $request->identifier);
+
+        return response()->json(['message' => 'Password reset successfully']);
 }
 public function resetPasswordWithOTP(Request $request)
 {

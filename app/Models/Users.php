@@ -7,10 +7,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Users extends Authenticatable
 {
     use HasApiTokens, Notifiable;
+    use SoftDeletes;
+
    /**
  * The attributes that are mass assignable.
  *
@@ -23,6 +26,7 @@ protected $fillable = [
     'phone',
     'hash_password',
     'digital_id',
+    'passport',
     'profile_picture',
     'driver_liscence',
     'role',
@@ -33,6 +37,7 @@ protected $fillable = [
     'otp',
     'otp_expires_at',
     'sso_id',
+    'two_factor_enabled',
 ];
 
 protected $casts = [
@@ -49,6 +54,8 @@ protected $hidden = [
     'hash_password',
     'otp',
 ];
+protected $dates = ['two_factor_expires_at'];
+
 
      /**
      * Get the URL for the driver's license file.
