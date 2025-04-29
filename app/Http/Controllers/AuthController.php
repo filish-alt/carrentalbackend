@@ -26,9 +26,10 @@ class AuthController extends Controller
         Log::info($request->all());
         $validator = Validator::make($request->all(), [
             'first_name'       => 'required|string|max:255',
+            'middle_name'        => 'required|string|max:255',
             'last_name'        => 'required|string|max:255',
             'email'            => 'required|email|unique:users,email',
-            'phone'            => 'required|regex:/^09\d{8}$/|unique:users,phone', 
+            'phone'            => 'required|regex:/^2519\d{8}$/|unique:users,phone', 
             'password'         => 'required|string|min:6|confirmed', 
             'driver_liscence'  => 'nullable|file|mimes:jpg,jpeg,png,pdf',
             'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf',
@@ -59,11 +60,14 @@ class AuthController extends Controller
                 ? $request->file('passport')->store('passport') 
                 : null;
     $otp = rand(100000, 999999);
+
+    $this->sendOtp($request->phone, $otp);
    
 
     // Create user
     $user = Users::create([
         'first_name'      => $request->first_name,
+        'middle_name'     => $request->middle_name,
         'last_name'       => $request->last_name,
         'email'           => $request->email,
         'phone'           => $request->phone,
@@ -138,6 +142,7 @@ public function login(Request $request)
 
     if ($user->two_factor_enabled) {
         $otp = rand(100000, 999999);
+        $this->sendOtp($request->phone, $otp);
         Redis::setex("2fa:{$user->id}", 300, $otp); // 5 mins expiry
 
         // Send OTP via email
@@ -179,6 +184,23 @@ public function updatePassword(Request $request)
     $user->save();
 
     return response()->json(['message' => 'Password updated successfully']);
+}
+public function sendOtp($phone, $otp){
+    try {
+        $response = Http::withToken('your_api_token_here')->asForm()->post('https://api.geezsms.com/api/v1/sms/send', [
+            'token' => 'your_api_token_here',
+            'phone' => $phone,
+            'msg'   => "Dear user, your OTP is: {$otp}. Use this code to complete your registration. It will expire in 5 minutes. Thank you!",
+        ]);
+
+        if ($response->failed()) {
+            Log::error('Failed to send OTP via SMS', ['response' => $response->body()]);
+            return response()->json(['message' => 'Failed to send OTP. Please try again later.'], 500);
+        }
+    } catch (\Exception $e) {
+        Log::error('Error occurred while sending OTP via SMS', ['error' => $e->getMessage()]);
+        return response()->json(['message' => 'An error occurred while sending OTP. Please try again later.'], 500);
+    }
 }
 
 }

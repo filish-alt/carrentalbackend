@@ -39,6 +39,7 @@ class PasswordResetController extends Controller
             //             ->subject('Your Password Reset OTP');
             // });
         } else {
+            $this->sendOtp($user->phone_number, $code);
             Log::info("OTP for {$user->phone_number}: {$code}");
             // Http::post('https://your-sms-api.com/send', [
             //     'phone' => $identifier,
@@ -79,6 +80,24 @@ class PasswordResetController extends Controller
         Redis::del('password_reset:' . $request->identifier);
 
         return response()->json(['message' => 'Password reset successfully']);
+}
+
+public function sendOtp($phone, $otp){
+    try {
+        $response = Http::withToken('your_api_token_here')->asForm()->post('https://api.geezsms.com/api/v1/sms/send', [
+            'token' => 'your_api_token_here',
+            'phone' => $phone,
+            'msg'   => "Dear user, your OTP is: {$otp}. Use this code to complete your registration. It will expire in 5 minutes. Thank you!",
+        ]);
+
+        if ($response->failed()) {
+            Log::error('Failed to send OTP via SMS', ['response' => $response->body()]);
+            return response()->json(['message' => 'Failed to send OTP. Please try again later.'], 500);
+        }
+    } catch (\Exception $e) {
+        Log::error('Error occurred while sending OTP via SMS', ['error' => $e->getMessage()]);
+        return response()->json(['message' => 'An error occurred while sending OTP. Please try again later.'], 500);
+    }
 }
 
 }
