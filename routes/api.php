@@ -10,8 +10,11 @@ use App\Http\Controllers\VehicleCategoryController;
 use App\Http\Controllers\SSOController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PasswordResetController;
-use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\LandingContentController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\PaymentMethodController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\VerificationController;
 use Laravel\Socialite\Facades\Socialite;
 use App\Http\Controllers\MaintenanceRecordController;
 use Illuminate\Support\Facades\Mail;
@@ -34,6 +37,24 @@ Route::get('/reviews', [ReviewController::class, 'index']);
 //     return 'Test Gmail sent!';
 // });
 
+// General Info
+Route::post('/general-info', [LandingContentController::class, 'setGeneralInfo']);
+Route::put('/general-info/{key}', [LandingContentController::class, 'updateGeneralInfo']);
+Route::get('/general-info', [LandingContentController::class, 'listGeneralInfo']);
+Route::get('/general-info/{key}', [LandingContentController::class, 'getGeneralInfo']);
+Route::delete('/general-info/{key}', [LandingContentController::class, 'deleteGeneralInfo']);
+
+// FAQ
+Route::get('/faqs', [LandingContentController::class, 'listFaqs']);
+Route::post('/faqs', [LandingContentController::class, 'addFaq']);
+Route::put('/faqs/{id}', [LandingContentController::class, 'updateFaq']);
+Route::delete('/faqs/{id}', [LandingContentController::class, 'deleteFaq']);
+
+// Landing Sections
+Route::get('/sections', [LandingContentController::class, 'listSections']);
+Route::post('/sections', [LandingContentController::class, 'addSection']);
+Route::put('/sections/{id}', [LandingContentController::class, 'updateSection']);
+Route::delete('/sections/{id}', [LandingContentController::class, 'deleteSection']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/update-password', [AuthController::class, 'updatePassword']);
@@ -65,4 +86,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/cars', CarController::class);
     Route::apiResource('/vehicle-inspections', VehicleInspectionController::class);
     Route::apiResource('/vehicle-categories', VehicleCategoryController::class);
+
+    Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
+    Route::post('/payment-methods', [PaymentMethodController::class, 'store']);
+    Route::get('/payment-methods/{id}', [PaymentMethodController::class, 'show']);
+    Route::put('/payment-methods/{id}', [PaymentMethodController::class, 'update']);
+    Route::delete('/payment-methods/{id}', [PaymentMethodController::class, 'destroy']);
+    Route::get('/users/{userId}/payment-methods', [PaymentMethodController::class, 'getByUserId']);
+
+    Route::get('/users/{id}/notifications', [NotificationController::class, 'getByUserId']);
+    Route::post('/notifications', [NotificationController::class, 'store']);
+    Route::patch('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    Route::put('/user/notifications/preferences', [NotificationController::class, 'updatePreferences']);
+
+    Route::get('/user/verification/status', [VerificationController::class, 'status']);
+    Route::post('/user/verification/id', [VerificationController::class, 'submitId']);
+    Route::post('/user/verification/payment', [VerificationController::class, 'verifyPayment']);
+    Route::post('/user/verification/car', [VerificationController::class, 'submitCar']);
+    Route::post('/user/verification/send-otp', [VerificationController::class, 'sendOtp']);
+    Route::post('/user/verification/phone', [VerificationController::class, 'verifyPhone']);
+    Route::post('/user/verification/send-email-token', [VerificationController::class, 'sendEmailVerification']);
+    Route::post('/user/verification/email', [VerificationController::class, 'verifyEmail']);
+    Route::post('/user/verification/payment', [VerificationController::class, 'verifyPayment']);
+    Route::put('/user/verification/status', [VerificationController::class, 'updateStatus']);
 });

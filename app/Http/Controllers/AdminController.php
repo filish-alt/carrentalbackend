@@ -7,7 +7,7 @@ use App\Models\Users;
 class AdminController extends Controller
 {
     //Admin see soft delte users
-        public function listDeletedUsers()
+    public function listDeletedUsers()
     {
         $deletedUsers = Users::onlyTrashed()->get();
         return response()->json($deletedUsers);
