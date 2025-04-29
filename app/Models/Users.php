@@ -21,6 +21,7 @@ class Users extends Authenticatable
  */
 protected $fillable = [
     'first_name',
+    'middle_name',
     'last_name',
     'email',
     'phone',
@@ -31,19 +32,23 @@ protected $fillable = [
     'driver_liscence',
     'role',
     'status',
-    'address',            
+    'address',
     'city',
-    'birth_date',      
+    'birth_date',
     'otp',
     'otp_expires_at',
     'sso_id',
     'two_factor_enabled',
+    'email_verification_token',
+    'email_verified_at'
 ];
 
 protected $casts = [
     'profile_picture' => 'array',
     'birth_date' => 'date',
     'otp_expires_at' => 'datetime',
+    'notification_preferences' => 'array',
+    'email_verified_at' => 'datetime'
 ];
   /**
      * The attributes that should be hidden for arrays.
@@ -76,4 +81,16 @@ protected $dates = ['two_factor_expires_at'];
     {
         return $this->digital_id ? Storage::url($this->digital_id) : null;
     }
+
+    public function paymentMethods()
+    {
+        return $this->hasMany(PaymentMethod::class, 'user_id');
+    }
+    // Notification relationship
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id');
+    }
+
+
 }
