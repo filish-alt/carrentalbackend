@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-             $table->renameColumn('id_card_back', 'passport');
+             $table->renameColumn('id_pack', 'passport');
         });
     }
 

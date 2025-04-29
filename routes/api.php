@@ -17,9 +17,7 @@ use App\Http\Controllers\MaintenanceRecordController;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
 
-use App\Http\Controllers\MaintenanceRecordController;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\TestMail;
+
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/verify-phone-otp', [AuthController::class, 'verifyPhoneOtp']);
