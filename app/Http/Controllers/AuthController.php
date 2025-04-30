@@ -17,8 +17,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-
 
 class AuthController extends Controller
 {
@@ -31,7 +29,7 @@ class AuthController extends Controller
             'middle_name'        => 'required|string|max:255',
             'last_name'        => 'required|string|max:255',
             'email'            => 'required|email|unique:users,email',
-            'phone'            => 'required|regex:/^(09|07)\d{8}$/|unique:users,phone',
+            'phone' => ['required', 'regex:/^(09|07)\d{8}$/', 'unique:users,phone'],
             'password'         => 'required|string|min:6|confirmed', 
             'driver_liscence'  => 'nullable|file|mimes:jpg,jpeg,png,pdf',
             'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf',
@@ -71,6 +69,7 @@ class AuthController extends Controller
         'first_name'      => $request->first_name,
         'middle_name'     => $request->middle_name,
         'last_name'       => $request->last_name,
+        'passport'        => $passport,
         'email'           => $request->email,
         'phone'           => $request->phone,
         'hash_password'   =>  Hash::make($request->password),
