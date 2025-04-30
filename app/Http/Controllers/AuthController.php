@@ -29,7 +29,7 @@ class AuthController extends Controller
             'middle_name'        => 'required|string|max:255',
             'last_name'        => 'required|string|max:255',
             'email'            => 'required|email|unique:users,email',
-            'phone'            => 'required|regex:/^(09|07)\d{8}$/|unique:users,phone',
+            'phone'            => ['required', 'regex:/^(09|07)\d{8}$/', 'unique:users,phone'],
             'password'         => 'required|string|min:6|confirmed', 
             'driver_liscence'  => 'nullable|file|mimes:jpg,jpeg,png,pdf',
             'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf',
