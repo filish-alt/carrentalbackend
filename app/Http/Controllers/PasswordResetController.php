@@ -130,8 +130,16 @@ public function resetPasswordWithOTP(Request $request)
 
 public function sendOtp($phone, $otp){
     try {
-        $response = Http::withToken('your_api_token_here')->asForm()->post('https://api.geezsms.com/api/v1/sms/send', [
-            'token' => 'your_api_token_here',
+
+        // Replace phone prefix
+        if (str_starts_with($phone, '09')) {
+            $phone = '2519' . substr($phone, 2);
+        } elseif (str_starts_with($phone, '07')) {
+            $phone = '2517' . substr($phone, 2);
+        }
+
+        $response = Http::asForm()->post('https://api.geezsms.com/api/v1/sms/send', [
+            'token' => 'iE0L4t06lOKr3u2AmzFQ3d4nXe2DZpeC',
             'phone' => $phone,
             'msg'   => "Dear user, your OTP is: {$otp}. Use this code to complete your registration. It will expire in 5 minutes. Thank you!",
         ]);
