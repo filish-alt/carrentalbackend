@@ -75,6 +75,7 @@ class AuthController extends Controller
         'phone'           => $request->phone,
         'hash_password'   =>  Hash::make($request->password),
         'digital_id'      => $digitalIdPath,
+        'passport'        => $passport,
         'driver_liscence' => $driverLiscencePath,
         'address'         => $request->address,
         'city'            => $request->city,
