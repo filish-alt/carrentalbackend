@@ -34,17 +34,11 @@ class PasswordResetController extends Controller
     
         if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
             Log::info("OTP for {$user->email}: {$code}");
-            // Mail::raw("Your code is: $otp", function ($message) use ($identifier) {
-            //     $message->to($identifier)
-            //             ->subject('Your Password Reset OTP');
-            // });
+            Mail::to($user->email)->send(new \App\Mail\TwoFactorCodeMail($code));
         } else {
             $this->sendOtp($user->phone_number, $code);
             Log::info("OTP for {$user->phone_number}: {$code}");
-            // Http::post('https://your-sms-api.com/send', [
-            //     'phone' => $identifier,
-            //     'message' => "Your password rest code is : $resetLink"
-            // ]);
+            
         }
 
         return response()->json([

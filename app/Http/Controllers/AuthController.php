@@ -160,6 +160,8 @@ public function login(Request $request)
         Mail::to($user->email)->send(new \App\Mail\TwoFactorCodeMail($otp));
        
         // Send via phone (SMS)
+        
+         $this->sendOtp($user->phone_number, $otp);
          Log::info("your 2fa code {$otp}");
 
         return response()->json([
