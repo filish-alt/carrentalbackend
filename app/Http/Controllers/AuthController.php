@@ -135,11 +135,11 @@ public function verifyPhoneOtp(Request $request)
 public function login(Request $request)
 {
     $request->validate([
-        'phone' => 'required|string',
+        'email' => 'required|string',
         'password' => 'required|string',
     ]);
 
-    $user = Users::where('phone', $request->phone)->first();
+    $user = Users::where('email', $request->email)->first();
     Log::info('=== Incoming Request ===');
     Log::info($request->all());
     
