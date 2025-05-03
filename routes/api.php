@@ -33,10 +33,6 @@ Route::post('/send-reset-code', [PasswordResetController::class, 'sendResetCode'
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 Route::post('/verify-2fa', [AuthController::class, 'verify2FA']);
 Route::get('/reviews', [ReviewController::class, 'index']);
-// Route::get('/test-gmail', function () {
-//     Mail::to('filagot24s@gmail.com')->send(new TestMail());
-//     return 'Test Gmail sent!';
-// });
 
 // General Info
 Route::post('/general-info', [LandingContentController::class, 'setGeneralInfo']);
@@ -56,6 +52,12 @@ Route::get('/sections', [LandingContentController::class, 'listSections']);
 Route::post('/sections', [LandingContentController::class, 'addSection']);
 Route::put('/sections/{id}', [LandingContentController::class, 'updateSection']);
 Route::delete('/sections/{id}', [LandingContentController::class, 'deleteSection']);
+
+//
+Route::get('/cars/search', [CarController::class, 'search']);
+Route::post('/cars/{car}/images', [CarController::class, 'uploadImages']);
+
+
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/update-password', [AuthController::class, 'updatePassword']);

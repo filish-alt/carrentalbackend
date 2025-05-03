@@ -11,6 +11,11 @@ class Car extends Model
         'price_per_day', 'fuel_type', 'transmission', 'location_lat', 'location_long'
     ];
 
+    public function images()
+    {
+    return $this->hasMany(CarImage::class);
+    }
+
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
