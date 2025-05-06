@@ -16,7 +16,7 @@ use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\VerificationController;
 use Laravel\Socialite\Facades\Socialite;
-use App\Http\Controllers\MaintenanceRecordController;
+
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
 
@@ -55,9 +55,8 @@ Route::delete('/sections/{id}', [LandingContentController::class, 'deleteSection
 
 //
 Route::get('/cars/search', [CarController::class, 'search']);
-Route::post('/cars/{car}/images', [CarController::class, 'uploadImages']);
-
-
+Route::get('cars', [CarController::class, 'index']); // ✅ Public
+Route::get('cars/{car}', [CarController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/update-password', [AuthController::class, 'updatePassword']);
@@ -75,10 +74,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-car-reviews', [ReviewController::class, 'reviewsForMyCars']);
 
 
-    Route::get('/maintenance', [MaintenanceRecordController::class, 'index']);        
-    Route::post('/maintenance', [MaintenanceRecordController::class, 'store']);       
-    Route::get('/maintenance/{id}', [MaintenanceRecordController::class, 'show']);     
-    Route::put('/maintenance/{id}', [MaintenanceRecordController::class, 'update']);  
+    // Route::get('/maintenance', [MaintenanceRecordController::class, 'index']);        
+    // Route::post('/maintenance', [MaintenanceRecordController::class, 'store']);       
+    // Route::get('/maintenance/{id}', [MaintenanceRecordController::class, 'show']);     
+    // Route::put('/maintenance/{id}', [MaintenanceRecordController::class, 'update']);  
     
 
     Route::post('/booking', [BookingController::class, 'store']);
@@ -86,7 +85,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users', [UserController::class, 'getAllUsers']);
     Route::get('/users/{id}', [UserController::class, 'getUserById']);
     Route::put('/users/{id}', [UserController::class, 'updateUser']);
-    Route::apiResource('/cars', CarController::class);
+    Route::post('cars', [CarController::class, 'store']);
+    Route::put('cars/{car}', [CarController::class, 'update']);
+    Route::delete('cars/{car}', [CarController::class, 'destroy']);
     Route::apiResource('/vehicle-inspections', VehicleInspectionController::class);
     Route::apiResource('/vehicle-categories', VehicleCategoryController::class);
 

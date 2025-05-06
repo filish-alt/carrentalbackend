@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
 use App\Models\Car;
 use App\Models\CarImage;
 use Illuminate\Http\Request;
@@ -16,7 +17,65 @@ class CarController extends Controller
 
     public function store(Request $request)
     {
-        return Car::create($request->all());
+        $request->validate([
+            'owner_id' => 'required|integer',
+            'make'  =>  'required|string',
+            'model' => 'required|string',
+            'vin'   =>   'nullable|string|unique:cars,vin',
+            'seating_capacity' => 'required|integer',
+            'license_plate' => 'required|string|unique:cars,license_plate',
+            'status' => 'required|string',
+            'price_per_day' => 'required|numeric',
+            'fuel_type' => 'required|string',
+            'transmission' => 'required|string',
+            'location_lat' => 'nullable|numeric',
+            'location_long' => 'nullable|numeric',
+            'pickup_location' => 'nullable|string',
+            'return_location' => 'nullable|string',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $car = Car::create([
+                'owner_id' => $request->owner_id,
+                'make' => $request->make,
+                'model' => $request->model,
+                'vin' => $request->vin,
+                'seating_capacity' => $request->seating_capacity,
+                'license_plate' => $request->license_plate,
+                'status' => $request->status,
+                'price_per_day' => $request->price_per_day,
+                'fuel_type' => $request->fuel_type,
+                'transmission' => $request->transmission,
+                'location_lat' => $request->location_lat ?? 8.9831,
+                'location_long' => $request->location_long ?? 38.8101,
+                'pickup_location' => $request->pickup_location,
+                'return_location' => $request->return_location,
+            ]);
+
+         if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('car_images', 'public');
+    
+                    CarImage::create([
+                        'car_id' => $car->id,
+                        'image_path' => $path,
+                    ]);
+                }
+            }
+      DB::commit();
+
+        return response()->json([
+            'message' => 'Car and images created successfully',
+            'car' => $car->load('images'),
+        ], 201);
+    
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+    }
+
     }
 
     public function show($id)
@@ -65,29 +124,5 @@ class CarController extends Controller
         return response()->json($cars);
     }
 
-public function uploadImages(Request $request, $carId)
-{
-    $request->validate([
-        'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-    ]);
 
-    $car = Car::findOrFail($carId);
-
-    if (!$car) {
-        return response()->json(['message' => 'Car not found'], 404);
-    }
-    
-    if ($request->hasFile('images')) {
-        foreach ($request->file('images') as $image) {
-            $path = $image->store('car_images', 'public');
-
-            CarImage::create([
-                'car_id' => $car->id,
-                'image_path' => $path,
-            ]);
-        }
-    }
-
-    return response()->json(['message' => 'Images uploaded successfully']);
-}
 }

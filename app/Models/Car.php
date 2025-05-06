@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Car extends Model
 {
+    protected $table = 'cars';
+
     protected $fillable = [
         'owner_id', 'make', 'model', 'vin', 'seating_capacity', 'license_plate', 'status',
-        'price_per_day', 'fuel_type', 'transmission', 'location_lat', 'location_long'
+        'price_per_day', 'fuel_type', 'transmission', 'location_lat', 'location_long','pickup_location','return_location'
     ];
 
     public function images()
