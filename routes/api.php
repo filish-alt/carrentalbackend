@@ -55,8 +55,9 @@ Route::delete('/sections/{id}', [LandingContentController::class, 'deleteSection
 
 //
 Route::get('/cars/search', [CarController::class, 'search']);
-Route::get('cars', [CarController::class, 'index']); // ✅ Public
+Route::get('cars', [CarController::class, 'index']); 
 Route::get('cars/{car}', [CarController::class, 'show']);
+Route::get('/cars/{car}/images', [CarController::class, 'getCarImages']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/update-password', [AuthController::class, 'updatePassword']);

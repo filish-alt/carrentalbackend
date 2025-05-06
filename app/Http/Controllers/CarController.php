@@ -123,6 +123,21 @@ class CarController extends Controller
 
         return response()->json($cars);
     }
-
+public function getCarImages($carId)
+    {
+        // Fetch the car with its related images
+        $car = Car::with('images')->find($carId);
+    
+        // Check if the car exists
+        if (!$car) {
+            return response()->json(['message' => 'Car not found'], 404);
+        }
+    
+        return response()->json([
+            'message' => 'Car images fetched successfully',
+            'images' => $car->images,
+        ]);
+    }
+    
 
 }
