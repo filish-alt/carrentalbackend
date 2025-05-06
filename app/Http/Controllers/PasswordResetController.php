@@ -34,22 +34,37 @@ class PasswordResetController extends Controller
     
         if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
             Log::info("OTP for {$user->email}: {$code}");
-            // Mail::raw("Your code is: $otp", function ($message) use ($identifier) {
-            //     $message->to($identifier)
-            //             ->subject('Your Password Reset OTP');
-            // });
+            Mail::to($user->email)->send(new \App\Mail\TwoFactorCodeMail($code));
         } else {
             $this->sendOtp($user->phone_number, $code);
             Log::info("OTP for {$user->phone_number}: {$code}");
-            // Http::post('https://your-sms-api.com/send', [
-            //     'phone' => $identifier,
-            //     'message' => "Your password rest code is : $resetLink"
-            // ]);
+            
         }
 
         return response()->json([
             'message' => 'code sent successfully.',
         ]);
+    }
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        $user = Users::where('email', $request->email)->first();
+        $otp = rand(100000, 999999);
+
+        $user->otp = $otp;
+        $user->otp_expires_at = now()->addMinutes(10);
+        $user->save();
+
+        // Send OTP to email
+        Mail::raw("Your OTP for password reset is: $otp", function ($message) use ($user) {
+            $message->to($user->email)
+                    ->subject('Password Reset OTP');
+        });
+
+        return response()->json(['message' => 'OTP sent to your email address.'], 200);
     }
 
  public function resetPassword(Request $request)
@@ -81,6 +96,31 @@ class PasswordResetController extends Controller
 
         return response()->json(['message' => 'Password reset successfully']);
 }
+public function resetPasswordWithOTP(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email|exists:users,email',
+        'otp' => 'required|string|size:6',
+        'password' => 'required|string|min:6|confirmed',
+    ]);
+
+    $user = Users::where('email', $request->email)
+        ->where('otp', $request->otp)
+        ->where('otp_expires_at', '>', now())
+        ->first();
+
+    if (!$user) {
+        return response()->json(['message' => 'Invalid or expired OTP.'], 400);
+    }
+
+    $user->hash_password = Hash::make($request->new_password);
+    $user->otp = null;
+    $user->otp_expires_at = null;
+    $user->save();
+
+    return response()->json(['message' => 'Password reset successfully.'], 200);
+}
+
 
 public function sendOtp($phone, $otp){
     try {

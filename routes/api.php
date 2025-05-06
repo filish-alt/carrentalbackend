@@ -16,8 +16,11 @@ use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\VerificationController;
 use Laravel\Socialite\Facades\Socialite;
+
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
+
+
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/verify-phone-otp', [AuthController::class, 'verifyPhoneOtp']);
@@ -30,10 +33,6 @@ Route::post('/send-reset-code', [PasswordResetController::class, 'sendResetCode'
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 Route::post('/verify-2fa', [AuthController::class, 'verify2FA']);
 Route::get('/reviews', [ReviewController::class, 'index']);
-// Route::get('/test-gmail', function () {
-//     Mail::to('filagot24s@gmail.com')->send(new TestMail());
-//     return 'Test Gmail sent!';
-// });
 
 // General Info
 Route::post('/general-info', [LandingContentController::class, 'setGeneralInfo']);
@@ -54,6 +53,11 @@ Route::post('/sections', [LandingContentController::class, 'addSection']);
 Route::put('/sections/{id}', [LandingContentController::class, 'updateSection']);
 Route::delete('/sections/{id}', [LandingContentController::class, 'deleteSection']);
 
+//
+Route::get('/cars/search', [CarController::class, 'search']);
+Route::get('cars', [CarController::class, 'index']); // ✅ Public
+Route::get('cars/{car}', [CarController::class, 'show']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/update-password', [AuthController::class, 'updatePassword']);
     Route::patch('/user/profile-picture', [UserController::class, 'updateProfilePicture']);
@@ -69,12 +73,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-reviews', [ReviewController::class, 'myReviews']);
     Route::get('/my-car-reviews', [ReviewController::class, 'reviewsForMyCars']);
 
-    Route::post('/booking', [BookingController::class, 'store']);
 
+    // Route::get('/maintenance', [MaintenanceRecordController::class, 'index']);        
+    // Route::post('/maintenance', [MaintenanceRecordController::class, 'store']);       
+    // Route::get('/maintenance/{id}', [MaintenanceRecordController::class, 'show']);     
+    // Route::put('/maintenance/{id}', [MaintenanceRecordController::class, 'update']);  
+    
+
+    Route::post('/booking', [BookingController::class, 'store']);
+    
     Route::get('/users', [UserController::class, 'getAllUsers']);
     Route::get('/users/{id}', [UserController::class, 'getUserById']);
     Route::put('/users/{id}', [UserController::class, 'updateUser']);
-    Route::apiResource('/cars', CarController::class);
+    Route::post('cars', [CarController::class, 'store']);
+    Route::put('cars/{car}', [CarController::class, 'update']);
+    Route::delete('cars/{car}', [CarController::class, 'destroy']);
     Route::apiResource('/vehicle-inspections', VehicleInspectionController::class);
     Route::apiResource('/vehicle-categories', VehicleCategoryController::class);
 

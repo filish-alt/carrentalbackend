@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
+
+
 class AuthController extends Controller
 {
     public function sendOtp($phone, $otp) {
@@ -80,7 +82,7 @@ class AuthController extends Controller
             'middle_name'        => 'required|string|max:255',
             'last_name'        => 'required|string|max:255',
             'email'            => 'required|email|unique:users,email',
-            'phone'            => ['required', 'regex:/^(09|07)\d{8}$/', 'unique:users,phone'],
+            'phone' => ['required', 'regex:/^(09|07)\d{8}$/', 'unique:users,phone'],
             'password'         => 'required|string|min:6|confirmed', 
             'driver_liscence'  => 'nullable|file|mimes:jpg,jpeg,png,pdf',
             'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf',
@@ -120,6 +122,7 @@ class AuthController extends Controller
         'first_name'      => $request->first_name,
         'middle_name'     => $request->middle_name,
         'last_name'       => $request->last_name,
+        'passport'        => $passport,
         'email'           => $request->email,
         'phone'           => $request->phone,
         'hash_password'   =>  Hash::make($request->password),
@@ -134,8 +137,16 @@ class AuthController extends Controller
         'otp'             => $otp,
         'otp_expires_at'  => now()->addMinutes(5),
     ]);
+
+    // Send OTP to email
+    if ($user->email) {
+        Mail::raw("Your registration OTP is: $otp", function ($message) use ($user) {
+            $message->to($user->email)
+                    ->subject('Account Verification OTP');
+        });
+    }
     
-      // Simulate sending OTP 
+    // Simulate sending OTP 
     Log::info("OTP for {$user->phone}: {$otp}");
     return response()->json([
         'message' => 'User registered successfully.',
@@ -176,11 +187,11 @@ public function verifyPhoneOtp(Request $request)
 public function login(Request $request)
 {
     $request->validate([
-        'phone' => 'required|string',
+        'email' => 'required|string',
         'password' => 'required|string',
     ]);
 
-    $user = Users::where('phone', $request->phone)->first();
+    $user = Users::where('email', $request->email)->first();
     Log::info('=== Incoming Request ===');
     Log::info($request->all());
     
@@ -201,6 +212,8 @@ public function login(Request $request)
         Mail::to($user->email)->send(new \App\Mail\TwoFactorCodeMail($otp));
        
         // Send via phone (SMS)
+        
+         $this->sendOtp($user->phone_number, $otp);
          Log::info("your 2fa code {$otp}");
 
         return response()->json([
@@ -217,6 +230,15 @@ public function login(Request $request)
         'user' => $user,
         'token' => $token,
     ]);
+}
+public function logout(Request $request)
+{
+    $user = Auth::user();
+    if ($user) {
+        $user->tokens()->delete();
+        return response()->json(['message' => 'Logged out successfully.']);
+    }
+    return response()->json(['message' => 'User not found.'], 404);
 }
 
 public function updatePassword(Request $request)
@@ -239,3 +261,4 @@ public function updatePassword(Request $request)
 }
 
 }
+
