@@ -22,6 +22,57 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    public function sendOtp($phone, $otp) {
+        try {
+            // Replace phone prefix
+            if (str_starts_with($phone, '09')) {
+                $phone = '2519' . substr($phone, 2);
+            } elseif (str_starts_with($phone, '07')) {
+                $phone = '2517' . substr($phone, 2);
+            }
+    
+            Log::info("Attempting to send OTP to phone: {$phone}");
+    
+            $response = Http::asForm()->post('https://api.geezsms.com/api/v1/sms/send', [
+                'token' => 'iE0L4t06lOKr3u2AmzFQ3d4nXe2DZpeC',
+                'phone' => $phone,
+                'msg'   => "Dear user, your OTP is: {$otp}. Use this code to complete your registration. It will expire in 5 minutes. Thank you!",
+            ]);
+    
+            Log::info("SMS API Response:", ['response' => $response->json()]);
+    
+            if ($response->failed()) {
+                Log::error('Failed to send OTP via SMS', [
+                    'status' => $response->status(),
+                    'response' => $response->body()
+                ]);
+                return [
+                    'success' => false,
+                    'message' => 'Failed to send OTP. Please try again later.',
+                    'api_response' => $response->json()
+                ];
+            }
+    
+            // Return success response
+            return [
+                'success' => true,
+                'message' => 'OTP sent successfully',
+                'api_response' => $response->json()
+            ];
+    
+        } catch (\Exception $e) {
+            Log::error('Error occurred while sending OTP via SMS', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return [
+                'success' => false,
+                'message' => 'An error occurred while sending OTP. Please try again later.',
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+    
     public function register(Request $request) 
      { 
         Log::info('=== Incoming Request ===');
@@ -63,7 +114,7 @@ class AuthController extends Controller
                 : null;
     $otp = rand(100000, 999999);
 
-    $this->sendOtp($request->phone, $otp);
+    $sms_response = $this->sendOtp($request->phone, $otp);
    
 
     // Create user
@@ -99,7 +150,8 @@ class AuthController extends Controller
     Log::info("OTP for {$user->phone}: {$otp}");
     return response()->json([
         'message' => 'User registered successfully.',
-        'user' => $user
+        'user' => $user,
+        'sms_response' => $sms_response
     ], 201);
 }
         
@@ -187,30 +239,6 @@ public function logout(Request $request)
         return response()->json(['message' => 'Logged out successfully.']);
     }
     return response()->json(['message' => 'User not found.'], 404);
-}
-public function sendOtp($phone, $otp) {
-    try {
-        // Replace phone prefix
-        if (str_starts_with($phone, '09')) {
-            $phone = '2519' . substr($phone, 2);
-        } elseif (str_starts_with($phone, '07')) {
-            $phone = '2517' . substr($phone, 2);
-        }
-
-        $response = Http::asForm()->post('https://api.geezsms.com/api/v1/sms/send', [
-            'token' => 'iE0L4t06lOKr3u2AmzFQ3d4nXe2DZpeC',
-            'phone' => $phone,
-            'msg'   => "Dear user, your OTP is: {$otp}. Use this code to complete your registration. It will expire in 5 minutes. Thank you!",
-        ]);
-
-        if ($response->failed()) {
-            Log::error('Failed to send OTP via SMS', ['response' => $response->body()]);
-            return response()->json(['message' => 'Failed to send OTP. Please try again later.'], 500);
-        }
-    } catch (\Exception $e) {
-        Log::error('Error occurred while sending OTP via SMS', ['error' => $e->getMessage()]);
-        return response()->json(['message' => 'An error occurred while sending OTP. Please try again later.'], 500);
-    }
 }
 
 public function updatePassword(Request $request)
