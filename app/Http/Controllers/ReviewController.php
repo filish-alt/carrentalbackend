@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Review;
+use App\Models\Car;
 
 class ReviewController extends Controller
 {
@@ -29,6 +30,16 @@ public function store(Request $request)
 public function index()
 {
     $reviews = Review::with(['user', 'car'])->get();
+
+    return response()->json(['reviews' => $reviews]);
+}
+
+//get review for specific car
+public function reviewsForCar(Car $car)
+{
+    $reviews = Review::where('car_id', $car->id)
+        ->with(['user', 'car'])
+        ->get();
 
     return response()->json(['reviews' => $reviews]);
 }

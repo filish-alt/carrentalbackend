@@ -58,6 +58,7 @@ Route::get('/cars/search', [CarController::class, 'search']);
 Route::get('cars', [CarController::class, 'index']); 
 Route::get('cars/{car}', [CarController::class, 'show']);
 Route::get('/cars/{car}/images', [CarController::class, 'getCarImages']);
+Route::get('/cars/{car}/reviews', [ReviewController::class, 'reviewsForCar']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/update-password', [AuthController::class, 'updatePassword']);

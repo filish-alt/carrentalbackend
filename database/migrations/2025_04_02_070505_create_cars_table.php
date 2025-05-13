@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('model'); 
             $table->string('vin')->unique();
             $table->string('license_plate')->unique();
-            $table->enum('status', ['available', 'rented', 'maintenance'])->default('available');
+            $table->enum('status', ['pending', 'available', 'rented', 'maintenance'])->default('pending');
             $table->decimal('price_per_day', 10, 2);
             $table->integer('seating_capacity');
             $table->enum('fuel_type', ['petrol', 'diesel', 'electric', 'hybrid']);
