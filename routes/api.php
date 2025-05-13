@@ -16,6 +16,7 @@ use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\VerificationController;
 use Laravel\Socialite\Facades\Socialite;
+use App\Http\Controllers\PaymentController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
@@ -33,6 +34,9 @@ Route::post('/send-reset-code', [PasswordResetController::class, 'sendResetCode'
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 Route::post('/verify-2fa', [AuthController::class, 'verify2FA']);
 Route::get('/reviews', [ReviewController::class, 'index']);
+
+Route::get('/chapa/callback', [PaymentController::class, 'handleCallback'])->name('api.chapa.callback');
+Route::get('/chapa/success', [PaymentController::class, 'paymentSuccess'])->name('api.chapa.success');
 
 // General Info
 Route::post('/general-info', [LandingContentController::class, 'setGeneralInfo']);

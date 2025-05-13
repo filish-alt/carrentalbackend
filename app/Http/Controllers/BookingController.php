@@ -6,23 +6,25 @@ use Illuminate\Http\Request;
 use App\Models\Booking;
 use App\Models\Users;
 use App\Models\Car;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
 class BookingController extends Controller
 {
       // Store a new booking
-      public function store(Request $request)
+    public function store(Request $request)
       {
         $data = $request->validate([
             'car_id' => 'required|exists:cars,id',
             'pickup_date' => 'required|date|after_or_equal:today',
             'return_date' => 'required|date|after:pickup_date',
             'total_price' => 'required|numeric|min:1',
-            'status' => 'required',
         ]);
        
           $data['user_id'] = auth()->id();
-      
+          $data['status'] = 'pending';
           // Check if the car is available
-          $car = Car::find($data['car_id']);
+          $car = Car::findOrFail($data['car_id']);
       
           if (!$car) {
               return response()->json(['error' => 'Car not found'], 404);
@@ -48,19 +50,43 @@ class BookingController extends Controller
 
           // Create the booking if car is available
           $booking = Booking::create($data);
-          
+          $tx_ref = 'TX-' . uniqid();
           // Create a payment record with status 'pending'
                 $booking->payment()->create([
                     'booking_id' => $booking->id,
                     'amount' => $data['total_price'],
                     'payment_status' => 'pending', 
-                    'payment_method' => $request->payment_method ?? 'chapa',
+                    'payment_method' => 'chapa',
                     'transaction_date' => now(),
+                    'tx_ref' => $tx_ref,
                 ]);
-          return response()->json([
-              'message' => 'Booking created successfully!',
-              'booking' => $booking
-          ], 201);
+
+    $chapaData = [
+        'amount' => $booking->total_price,
+        'currency' => 'ETB',
+        'email' => auth()->user()->email,
+        'first_name' => auth()->user()->first_name,
+        'phone_number' => auth()->user()->phone,
+        'tx_ref' => $tx_ref,
+        'callback_url' =>  url('/api/chapa/callback'),
+        //'return_url' =>  url('/api/chapa/sucess'),
+        'customization' => [
+            'title' => 'Booking Payment',
+            'description' => 'Payment for car rental',
+        ],
+    ];
+  Log::info('Chapa Response', $chapaData);
+     $response = Http::withToken(env('CHAPA_SECRET_KEY'))
+        ->post(env('CHAPA_BASE_URL') . '/transaction/initialize', $chapaData);
+        $data = $response->json();
+        if ($response->successful() && isset($response['data']['checkout_url'])) {
+            return response()->json([
+                'message' => 'Booking created. Redirect to Chapa.',
+                'checkout_url' => $data['data']['checkout_url'], 
+            ]);
+
+        }
+     return response()->json(['error' => 'Unable to redirect to payment'], 500);
       }
       
     // List all bookings for the authenticated user
