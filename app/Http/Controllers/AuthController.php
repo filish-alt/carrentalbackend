@@ -223,6 +223,9 @@ public function login(Request $request)
         ]);
     }
     
+    //Force logout: delete all old tokens before issuing a new one
+    $user->tokens()->delete();
+    
     $token = $user->createToken('auth_token')->plainTextToken;
 
     return response()->json([
