@@ -51,7 +51,8 @@ class BookingController extends Controller
           // Create the booking if car is available
           $booking = Booking::create($data);
           $tx_ref = 'TX-' . uniqid();
-          // Create a payment record with status 'pending'
+          
+          // Create a payment record with 
                 $booking->payment()->create([
                     'booking_id' => $booking->id,
                     'amount' => $data['total_price'],
@@ -69,7 +70,7 @@ class BookingController extends Controller
         'phone_number' => auth()->user()->phone,
         'tx_ref' => $tx_ref,
         'callback_url' =>  url('/api/chapa/callback'),
-        //'return_url' =>  url('/api/chapa/sucess'),
+        //'return_url' =>  ,
         'customization' => [
             'title' => 'Booking Payment',
             'description' => 'Payment for car rental',
