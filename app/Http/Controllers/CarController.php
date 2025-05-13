@@ -54,13 +54,27 @@ class CarController extends Controller
                 'return_location' => $request->return_location,
             ]);
 
-         if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('car_images', 'public');
+        //  if ($request->hasFile('images')) {
+        //         foreach ($request->file('images') as $image) {
+        //             $path = $image->store('car_images', 'public');
     
+        //             CarImage::create([
+        //                 'car_id' => $car->id,
+        //                 'image_path' => $path,
+        //             ]);
+        //         }
+        //     }
+          if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                $filename = time() . '_' . $image->getClientOriginalName();
+
+        // Save to public_html/car_images/
+        $destinationPath = base_path('../public_html/car_images'); // outside Laravel project folder, directly in public_html
+        $image->move($destinationPath, $filename);
+        
                     CarImage::create([
                         'car_id' => $car->id,
-                        'image_path' => $path,
+                         'image_path' => 'car_images/' . $filename,
                     ]);
                 }
             }

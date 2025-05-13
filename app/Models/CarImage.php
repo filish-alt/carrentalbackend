@@ -24,9 +24,13 @@ protected $fillable = [
     return $this->belongsTo(Car::class);
   }
 
-  public function getImageUrlAttribute()
-  {
-      return Storage::url($this->image_path);
-  }
+ //  public function getImageUrlAttribute()
+//   {
+//       return Storage::url($this->image_path);
+//   }
+public function getImageUrlAttribute()
+{
+    return url($this->image_path);
 
+}
 }
