@@ -8,6 +8,9 @@ use App\Models\Users;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
 
+use Carbon\Carbon;
+use App\Models\AuthCode; 
+
 class SSOController extends Controller
 {
 
@@ -44,18 +47,53 @@ class SSOController extends Controller
 
                 ]);
             }
-    
-            $token = $user->createToken('google-login-token')->plainTextToken;
-    
-            return response()->json([
-                'token' => $token,
-                'user' => $user,
-            ]);
+            
+            // Generate short-lived auth code
+             $code = Str::random(40);
+
+            //$token = $user->createToken('google-login-token')->plainTextToken;
+        AuthCode::create([
+            'code' => $code,
+            'user_id' => $user->id,
+            'expires_at' => Carbon::now()->addMinutes(10), // 1-minute expiry
+        ]);
+
+        // Redirect to frontend with code only
+        return redirect()->to("http://localhost:3000/sso-callback?code={$code}");
+            // return response()->json([
+            //     'token' => $token,
+            //     'user' => $user,
+            // ]);
     
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
     
+    public function exchangeCode(Request $request) {
+
+         $request->validate([
+        'code' => 'required|string',
+    ]);
+     $authCode = AuthCode::where('code', $request->code)
+        ->where('expires_at', '>', Carbon::now())
+        ->first();
+
+    if (! $authCode) {
+        return response()->json(['error' => 'Invalid or expired code'], 400);
+    }
+       $user = Users::find($authCode->user_id);
+
+    // Delete the code after use
+    $authCode->delete();
+
+    $token = $user->createToken('google-login-token')->plainTextToken;
+
+    return response()->json([
+        'token' => $token,
+        'user' => $user,
+    ]);
+
+    }
 }
 
