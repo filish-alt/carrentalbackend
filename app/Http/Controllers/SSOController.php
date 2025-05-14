@@ -51,26 +51,22 @@ class SSOController extends Controller
             // Generate short-lived auth code
              $code = Str::random(40);
 
-            //$token = $user->createToken('google-login-token')->plainTextToken;
         AuthCode::create([
             'code' => $code,
             'user_id' => $user->id,
-            'expires_at' => Carbon::now()->addMinutes(10), // 1-minute expiry
+            'expires_at' => Carbon::now()->addMinutes(10), 
         ]);
 
         // Redirect to frontend with code only
         return redirect()->to("http://localhost:3000/sso-callback?code={$code}");
-            // return response()->json([
-            //     'token' => $token,
-            //     'user' => $user,
-            // ]);
+           
     
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
     
-    public function exchangeCode(Request $request) {
+public function exchangeCode(Request $request) {
 
          $request->validate([
         'code' => 'required|string',
@@ -83,9 +79,6 @@ class SSOController extends Controller
         return response()->json(['error' => 'Invalid or expired code'], 400);
     }
        $user = Users::find($authCode->user_id);
-
-    // Delete the code after use
-    $authCode->delete();
 
     $token = $user->createToken('google-login-token')->plainTextToken;
 

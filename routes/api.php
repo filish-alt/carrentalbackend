@@ -29,6 +29,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/auth/google', [SSOController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [SSOController::class, 'handleGoogleCallback']);
+Route::post('/auth/exchange-code', [SSOController::class, 'exchangeCode']);
 
 Route::post('/send-reset-code', [PasswordResetController::class, 'sendResetCode']);
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
