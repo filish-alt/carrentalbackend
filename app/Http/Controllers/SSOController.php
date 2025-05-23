@@ -57,10 +57,15 @@ class SSOController extends Controller
             'expires_at' => Carbon::now()->addMinutes(10), 
         ]);
 
-        // Redirect to frontend with code only
-        return redirect()->to("http://localhost:3000/sso-callback?code={$code}");
-           
-    
+         // Detect if it's for mobile or web
+        $isMobile = request()->query('platform') === 'mobile';
+
+        $redirectTo = $isMobile
+            ? 'myapp://sso-callback?code=' . $code  
+            : 'http://localhost:3000/sso-callback?code=' . $code; 
+
+        return redirect($redirectTo);
+
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
