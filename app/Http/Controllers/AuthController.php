@@ -153,7 +153,21 @@ class AuthController extends Controller
     Log::info("OTP for {$user->phone}: {$otp}");
     return response()->json([
         'message' => 'User registered successfully.',
-        'user' => $user,
+        'user' => [
+            'id' => $user->id,
+            'first_name' => $user->first_name,
+            'middle_name' => $user->middle_name,
+            'last_name' => $user->last_name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'driver_liscence' => $driverLiscenceUrl,
+            'digital_id' => $digitalIdUrl,
+            'passport' => $passportUrl,
+            'address' => $user->address,
+            'city' => $user->city,
+            'birth_date' => $user->birth_date,
+            'status' => $user->status,
+    ],
         'sms_response' => $sms_response
     ], 201);
 }
