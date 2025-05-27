@@ -100,18 +100,21 @@ class AuthController extends Controller
             ], 422);
         }
 
-               
-            $driverLiscencePath = $request->file('driver_liscence') 
-                ? $request->file('driver_liscence')->store('driver_licences') 
-                : null;
-
-            $digitalIdPath = $request->file('digital_id') 
-                ? $request->file('digital_id')->store('digital_ids') 
-                : null;
-
-            $passport = $request->file('passport') 
-                ? $request->file('passport')->store('passport') 
-                : null;
+            $digitalIdPath = $request->file('digital_id')
+            ? $request->file('digital_id')->move(base_path('../public_html/digital_ids'), uniqid() . '.' 
+            . $request->file('digital_id')->getClientOriginalExtension())
+            : null;
+     
+            $driverLiscencePath = $request->file('driver_liscence')
+             ? $request->file('driver_liscence')->move(base_path('../public_html/driver_licences'), uniqid() . '.' 
+             . $request->file('driver_liscence')->getClientOriginalExtension())
+             : null;
+            
+              $passport = $request->file('passport')
+             ? $request->file('passport')->move(base_path('../public_html/passport'), uniqid() . '.' 
+             . $request->file('passport')->getClientOriginalExtension())
+             : null;
+            
     $otp = rand(100000, 999999);
 
     $sms_response = $this->sendOtp($request->phone, $otp);

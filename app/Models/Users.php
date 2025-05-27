@@ -69,7 +69,8 @@ protected $dates = ['two_factor_expires_at'];
      */
     public function getDriverLicenceUrlAttribute()
     {
-        return $this->driver_liscence ? Storage::url($this->driver_liscence) : null;
+       // return $this->driver_liscence ? Storage::url($this->driver_liscence) : null;
+       return url( $this->driver_liscence);
     }
 
   /**
@@ -79,9 +80,21 @@ protected $dates = ['two_factor_expires_at'];
      */
     public function getDigitalIdUrlAttribute()
     {
-        return $this->digital_id ? Storage::url($this->digital_id) : null;
+       // return $this->digital_id ? Storage::url($this->digital_id) : null;
+        return url( $this->digital_id);
     }
 
+     /**
+     * Get the URL for the digital ID file.
+     *
+     * @return string|null
+     */
+  public function getPassportUrlAttribute()
+    {
+       // return $this->digital_id ? Storage::url($this->digital_id) : null;
+        return url( $this->passport);
+    }
+    
     public function paymentMethods()
     {
         return $this->hasMany(PaymentMethod::class, 'user_id');
