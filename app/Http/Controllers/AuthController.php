@@ -114,6 +114,11 @@ class AuthController extends Controller
              ? $request->file('passport')->move(base_path('../public_html/passport'), uniqid() . '.' 
              . $request->file('passport')->getClientOriginalExtension())
              : null;
+
+             $driverLiscenceUrl = $driverLiscencePath ? url('driver_licences/' . basename($driverLiscencePath)) : null;
+            $digitalIdUrl = $digitalIdPath ? url('digital_ids/' . basename($digitalIdPath)) : null;
+            $passportUrl = $passport ? url('passport/' . basename($passport)) : null;
+
             
     $otp = rand(100000, 999999);
 
@@ -167,7 +172,7 @@ class AuthController extends Controller
             'city' => $user->city,
             'birth_date' => $user->birth_date,
             'status' => $user->status,
-    ],
+           ],
         'sms_response' => $sms_response
     ], 201);
 }
