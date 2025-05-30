@@ -6,6 +6,10 @@ use Illuminate\Http\Request;
 use App\Models\UserVerification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+use App\Models\PaymentMethod;
+
 
 class VerificationController extends Controller
 {
@@ -98,7 +102,7 @@ class VerificationController extends Controller
         $user->update(['email_verification_token' => $token]);
 
         Mail::raw("Use this token to verify your email: {$token}", function ($message) use ($user) {
-            $message->to($user->email)->subject('Verify Your Email');
+            $message->to($user->email)->subject('Bisrat Tech: Verify Your Email');
         });
 
         return response()->json(['message' => 'Email verification token sent successfully.']);
@@ -165,5 +169,70 @@ class VerificationController extends Controller
             'data' => $verification,
         ]);
     }
+// ADMIN: List all pending verifications
+public function listPending()
+{
+    $verifications = UserVerification::where(function ($query) {
+        $query->where('id_verified', false)
+              ->orWhere('phone_verified', false)
+              ->orWhere('email_verified', false)
+              ->orWhere('payment_verified', false)
+              ->orWhere('car_verified', false);
+    })->with('user')->get();
+
+    return response()->json(['verifications' => $verifications]);
+}
+
+// ADMIN: View verification by ID
+public function showVerification($id)
+{
+    $verification = UserVerification::with('user')->find($id);
+
+    if (!$verification) {
+        return response()->json(['message' => 'Verification record not found.'], 404);
+    }
+
+    return response()->json(['verification' => $verification]);
+}
+
+// ADMIN: Approve all user documents
+public function approve($id)
+{
+    $verification = UserVerification::find($id);
+
+    if (!$verification) {
+        return response()->json(['message' => 'Verification record not found.'], 404);
+    }
+
+    $verification->update([
+        'id_verified' => true,
+        'phone_verified' => true,
+        'email_verified' => true,
+        'payment_verified' => true,
+        'car_verified' => true
+    ]);
+
+    return response()->json(['message' => 'All documents approved successfully.']);
+}
+
+// ADMIN: Reject all documents (soft reset)
+public function reject($id)
+{
+    $verification = UserVerification::find($id);
+
+    if (!$verification) {
+        return response()->json(['message' => 'Verification record not found.'], 404);
+    }
+
+    $verification->update([
+        'id_verified' => false,
+        'phone_verified' => false,
+        'email_verified' => false,
+        'payment_verified' => false,
+        'car_verified' => false
+    ]);
+
+    return response()->json(['message' => 'All documents rejected.']);
+}
 
 }

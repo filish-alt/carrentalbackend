@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use App\Models\Users;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Redis;
+
 
 class UserController extends Controller
 {
@@ -162,5 +165,47 @@ public function deleteAccount(Request $request)
 
     return response()->json(['message' => 'Your account has been deleted and is pending permanent removal.']);
 }
+
+public function banUser($id)
+{
+    $user = Users::find($id);
+
+    if (!$user) {
+        return response()->json(['message' => 'User not found.'], 404);
+    }
+
+    $user->is_banned = true;
+    $user->save();
+
+    return response()->json(['message' => 'User has been banned successfully.']);
+}
+
+public function unbanUser($id)
+{
+    $user = Users::find($id);
+
+    if (!$user) {
+        return response()->json(['message' => 'User not found.'], 404);
+    }
+
+    $user->is_banned = false;
+    $user->save();
+
+    return response()->json(['message' => 'User has been unbanned successfully.']);
+}
+
+public function deleteUser($id)
+{
+    $user = Users::find($id);
+
+    if (!$user) {
+        return response()->json(['message' => 'User not found.'], 404);
+    }
+
+    $user->delete();
+
+    return response()->json(['message' => 'User has been deleted successfully.']);
+}
+
 
 }
