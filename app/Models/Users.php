@@ -73,6 +73,17 @@ protected $dates = ['two_factor_expires_at'];
        return url( $this->driver_liscence);
     }
 
+     /**
+     * Get the URL for the driver's license file.
+     *
+     * @return string|null
+     */
+    public function getProfilePictureUrlAttribute()
+    {
+       // return $this->driver_liscence ? Storage::url($this->driver_liscence) : null;
+       return url( $this->profile_picture);
+    }
+
   /**
      * Get the URL for the digital ID file.
      *

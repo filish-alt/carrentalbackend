@@ -15,30 +15,34 @@ class UserController extends Controller
 {
  // update user profile picture
 public function updateProfilePicture(Request $request)
-  {
+{
     $request->validate([
         'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
     ]);
 
     $user = auth()->user();
 
-    // Store the uploaded image
-    $path = $request->file('profile_picture')->store('profile_pictures', 'public');
-
-    //  delete old picture
-    if ($user->profile_picture) {
-        Storage::disk('public')->delete($user->profile_picture);
+    // Handle old profile picture deletion
+    if ($user->profile_picture && file_exists(public_path('profile_pictures/' . basename($user->profile_picture)))) {
+        unlink(public_path('profile_pictures/' . basename($user->profile_picture)));
     }
 
-    // Save the new path
-    $user->profile_picture = $path;
+    // Store the new uploaded image
+    $filename = uniqid() . '.' . $request->file('profile_picture')->getClientOriginalExtension();
+    $request->file('profile_picture')->move(public_path('profile_pictures'), $filename);
+
+    $profilePictureUrl = url('profile_pictures/' . $filename);
+
+    // Save the new path in DB (if you save the relative path or full URL depends on your DB schema)
+    $user->profile_picture = 'profile_pictures/' . $filename;
     $user->save();
 
     return response()->json([
         'message' => 'Profile picture updated successfully',
-        'profile_picture_url' => asset('storage/' . $path),
+        'profile_picture_url' => $profilePictureUrl,
     ]);
 }
+
     // Get all users
     public function getAllUsers()
     {
