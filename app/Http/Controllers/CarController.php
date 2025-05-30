@@ -7,6 +7,9 @@ use App\Models\Car;
 use App\Models\CarImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Exception;
+
+
 
 class CarController extends Controller
 {
@@ -152,6 +155,49 @@ public function getCarImages($carId)
             'images' => $car->images,
         ]);
     }
+
+// Approve a car listing
+public function approveCar($id)
+{
+    $car = Car::find($id);
+    if (!$car) {
+        return response()->json(['message' => 'Car not found'], 404);
+    }
+
+    $car->status = 'approved';
+    $car->save();
+
+    return response()->json(['message' => 'Car listing approved']);
+}
+
+// Reject a car listing
+public function rejectCar($id)
+{
+    $car = Car::find($id);
+    if (!$car) {
+        return response()->json(['message' => 'Car not found'], 404);
+    }
+
+    $car->status = 'rejected';
+    $car->save();
+
+    return response()->json(['message' => 'Car listing rejected']);
+}
+
+// Block a car
+public function blockCar($id)
+{
+    $car = Car::find($id);
+    if (!$car) {
+        return response()->json(['message' => 'Car not found'], 404);
+    }
+
+    $car->status = 'blocked';
+    $car->save();
+
+    return response()->json(['message' => 'Car has been blocked']);
+}
+
     
 
 }
