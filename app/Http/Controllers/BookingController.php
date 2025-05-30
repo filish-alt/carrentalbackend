@@ -37,7 +37,7 @@ class BookingController extends Controller
           }
 
             // Prevent booking own car
-          if ($car->user_id === auth()->id()) {
+          if ($car->owner_id === auth()->id()) {
             return $this->errorResponse("You Can't Book Your Own car", null, 403);
            }
             

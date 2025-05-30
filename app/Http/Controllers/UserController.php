@@ -21,6 +21,8 @@ public function updateProfilePicture(Request $request)
     ]);
 
     $user = auth()->user();
+    $file = $request->file('profile_picture');
+
 
     // Handle old profile picture deletion
     if ($user->profile_picture && file_exists(public_path('profile_pictures/' . basename($user->profile_picture)))) {
