@@ -8,6 +8,8 @@ use App\Models\Users;
 use App\Models\Car;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+
 
 class BookingController extends Controller
 {
@@ -132,5 +134,49 @@ class BookingController extends Controller
  
          return response()->json(['message' => 'Booking cancelled']);
      }
+
+     
+// ADMIN: List all bookings
+public function adminIndex()
+{
+    $bookings = Booking::with(['car', 'user'])->get();
+    return response()->json([
+        'message' => 'All bookings fetched successfully.',
+        'bookings' => $bookings
+    ]);
+}
+
+// ADMIN: Show specific booking by ID
+public function adminShow($id)
+{
+    $booking = Booking::with(['car', 'user'])->find($id);
+
+    if (!$booking) {
+        return response()->json(['message' => 'Booking not found.'], 404);
+    }
+
+    return response()->json([
+        'message' => 'Booking details fetched successfully.',
+        'booking' => $booking
+    ]);
+}
+
+// ADMIN: Cancel booking
+public function adminCancel($id)
+{
+    $booking = Booking::find($id);
+
+    if (!$booking) {
+        return response()->json(['message' => 'Booking not found.'], 404);
+    }
+
+    if ($booking->status !== 'pending') {
+        return response()->json(['error' => 'Only pending bookings can be cancelled.'], 400);
+    }
+
+    $booking->update(['status' => 'cancelled']);
+
+    return response()->json(['message' => 'Booking cancelled by admin.']);
+}
 
 }

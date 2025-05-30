@@ -91,13 +91,29 @@ Route::middleware('auth:sanctum')->group(function () {
     
 
     Route::post('/booking', [BookingController::class, 'store']);
+    Route::get('/bookings', [BookingController::class, 'index']);            // List user's bookings
+    Route::get('/bookings/{id}', [BookingController::class, 'show']);        // View specific booking
+    Route::patch('/bookings/{id}/cancel', [BookingController::class, 'cancel']); // Cancel user's own booking
+    Route::get('/bookings/admin', [BookingController::class, 'adminIndex']);            // List all bookings
+    Route::get('/bookings/admin/{id}', [BookingController::class, 'adminShow']);        // View booking details
+    Route::patch('/bookings/admin/{id}/cancel', [BookingController::class, 'adminCancel']); // Cancel booking
     
     Route::get('/users', [UserController::class, 'getAllUsers']);
     Route::get('/users/{id}', [UserController::class, 'getUserById']);
     Route::put('/users/{id}', [UserController::class, 'updateUser']);
+    Route::patch('/users/{id}/ban', [UserController::class, 'banUser']);     // Ban a user
+    Route::patch('/users/{id}/unban', [UserController::class, 'unbanUser']); // Unban a user
+    Route::delete('/users/{id}', [UserController::class, 'deleteUser']);     // Delete a user
+
+
     Route::post('cars', [CarController::class, 'store']);
     Route::put('cars/{car}', [CarController::class, 'update']);
     Route::delete('cars/{car}', [CarController::class, 'destroy']);
+    Route::patch('/cars/{id}/approve', [CarController::class, 'approveCar']); // Approve car listing
+    Route::patch('/cars/{id}/reject', [CarController::class, 'rejectCar']);   // Reject car listing
+    Route::patch('/cars/{id}/block', [CarController::class, 'blockCar']);     // Block car
+
+
     Route::apiResource('/vehicle-inspections', VehicleInspectionController::class);
     Route::apiResource('/vehicle-categories', VehicleCategoryController::class);
 
@@ -124,4 +140,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/verification/email', [VerificationController::class, 'verifyEmail']);
     Route::post('/user/verification/payment', [VerificationController::class, 'verifyPayment']);
     Route::put('/user/verification/status', [VerificationController::class, 'updateStatus']);
+
+    Route::get('/verifications', [VerificationController::class, 'listPending']);        // List all pending verifications
+    Route::get('/verifications/{id}', [VerificationController::class, 'showVerification']); // View single verification
+    Route::patch('/verifications/{id}/approve', [VerificationController::class, 'approve']); // Approve
+    Route::patch('/verifications/{id}/reject', [VerificationController::class, 'reject']);   // Reject
 });
