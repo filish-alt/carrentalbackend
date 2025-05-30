@@ -17,6 +17,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\VerificationController;
 use Laravel\Socialite\Facades\Socialite;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\AdminRegistrationController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
@@ -66,6 +67,8 @@ Route::get('/cars/{car}/images', [CarController::class, 'getCarImages']);
 Route::get('/cars/{car}/reviews', [ReviewController::class, 'reviewsForCar']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/adminregister', [AdminRegistrationController::class, 'register']);
+
     Route::post('/update-password', [AuthController::class, 'updatePassword']);
     Route::patch('/user/profile-picture', [UserController::class, 'updateProfilePicture']);
     Route::patch('/user/toggle-2fa', [UserController::class, 'toggleTwoFactor']);
