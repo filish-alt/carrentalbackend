@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Users;
+use App\Models\SuperAdmin;
 
 
 use Illuminate\Support\Facades\Redis;
@@ -118,8 +119,7 @@ class AuthController extends Controller
              $driverLiscenceUrl = $driverLiscencePath ? url('driver_licences/' . basename($driverLiscencePath)) : null;
             $digitalIdUrl = $digitalIdPath ? url('digital_ids/' . basename($digitalIdPath)) : null;
             $passportUrl = $passport ? url('passport/' . basename($passport)) : null;
-
-            
+         
     $otp = rand(100000, 999999);
 
     $sms_response = $this->sendOtp($request->phone, $otp);
@@ -130,13 +130,12 @@ class AuthController extends Controller
         'first_name'      => $request->first_name,
         'middle_name'     => $request->middle_name,
         'last_name'       => $request->last_name,
-        'passport'        => $passport,
         'email'           => $request->email,
         'phone'           => $request->phone,
         'hash_password'   =>  Hash::make($request->password),
         'digital_id'      => $digitalIdPath,
         'passport'        => $passport,
-        'driver_liscence' => $driverLiscencePath,
+        'driver_licence' => $driverLiscencePath,
         'address'         => $request->address,
         'city'            => $request->city,
         'birth_Date'      => $request->birth_date,
@@ -165,7 +164,7 @@ class AuthController extends Controller
             'last_name' => $user->last_name,
             'email' => $user->email,
             'phone' => $user->phone,
-            'driver_liscence' => $driverLiscenceUrl,
+            'driver_licence' => $driverLiscenceUrl,
             'digital_id' => $digitalIdUrl,
             'passport' => $passportUrl,
             'address' => $user->address,
@@ -216,11 +215,26 @@ public function login(Request $request)
     $user = Users::where('email', $request->email)->first();
     Log::info('=== Incoming Request ===');
     Log::info($request->all());
-    
-    if (! $user || ! Hash::check($request->password, $user->hash_password)) {
-        return response()->json(['message' => 'Invalid credentials'], 401);
-    }
-   
+     $userType='';
+     $admin = SuperAdmin::where('email', $request->email)->first();
+        if ($admin && Hash::check($request->password, $admin->hash_password)) {
+                $user = $admin;
+                $userType = 'admin';
+            }
+
+        if (!$user) {
+            $normalUser = Users::where('email', $request->email)->first();
+            if ($normalUser && Hash::check($request->password, $normalUser->hash_password)) {
+                $user = $normalUser;
+                $userType = 'user';
+            }
+        }
+        if (!$user) {
+            Log::warning('Invalid login credentials', ['email' => $request->email]);
+            return response()->json(['message' => 'Invalid credentials.'], 401);
+            
+        }
+   if ($userType === 'user') {
     if ($user->otp && $user->otp_expires_at && now()->lessThan($user->otp_expires_at)) {
         return response()->json(['message' => 'Phone number not verified. Please enter the OTP sent to your phone.'], 403);
     }
@@ -244,14 +258,21 @@ public function login(Request $request)
             'user_id' => $user->id,
         ]);
     }
-    
+}
     //Force logout: delete all old tokens before issuing a new one
-    $user->tokens()->delete();
-    
+    //$user->tokens()->delete();
+       
+        // Check for existing active token 
+        //  $activeToken = $user->tokens()->first();
+        //  if ($activeToken) {
+        //     return $this->errorResponse('You are already logged in from another device. Please log out first to continue.', 
+        //                                 null, 403);
+        // }
     $token = $user->createToken('auth_token')->plainTextToken;
 
     return response()->json([
         'message' => 'Login successful',
+        'role' => $user->role ?? $userType,
         'user' => $user,
         'token' => $token,
     ]);

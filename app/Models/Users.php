@@ -8,12 +8,14 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Permission\Traits\HasRoles;
 
 class Users extends Authenticatable
-{
+{ 
+    use HasRoles;
     use HasApiTokens, Notifiable;
     use SoftDeletes;
-
+ protected $guard_name = 'web'; 
    /**
  * The attributes that are mass assignable.
  *
@@ -29,7 +31,7 @@ protected $fillable = [
     'digital_id',
     'passport',
     'profile_picture',
-    'driver_liscence',
+    'driver_licence',
     'role',
     'status',
     'adress',
@@ -115,6 +117,31 @@ protected $dates = ['two_factor_expires_at'];
     {
         return $this->hasMany(Notification::class, 'user_id');
     }
+    
+    public function cars()
+    {
+        return $this->hasMany(Car::class, 'owner_id');
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class, 'user_id');
+    }
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isOwner()
+    {
+        return $this->cars()->exists();
+    }
+
+    public function isRenter()
+    {
+        return $this->bookings()->exists();
+    }
+
 
 
 }

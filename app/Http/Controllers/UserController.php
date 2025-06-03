@@ -87,36 +87,42 @@ public function updateProfilePicture(Request $request)
             'password'         => 'nullable|string|min:6|confirmed',
             'driver_liscence'  => 'nullable|file|mimes:jpg,jpeg,png,pdf',
             'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-            'address'          => 'nullable|string|max:255',
+            'adress'          => 'nullable|string|max:255',
             'city'             => 'nullable|string|max:100',
-            'birth_date'       => 'nullable|date',
+            'birth_Date'       => 'nullable|date',
             'role'             => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-
+        
         if ($request->hasFile('driver_liscence')) {
-            $user->driver_liscence = $request->file('driver_liscence')->store('driver_licences');
+        $driverLicenseFile = $request->file('driver_liscence');
+        $filename = uniqid() . '.' . $request->file('driver_liscence')->getClientOriginalExtension();
+        $path = $request->file('driver_liscence')->move(public_path('driver_licences'), $filename);
+        $user->driver_license = 'driver_liscence/' . $filename;
         }
 
         if ($request->hasFile('digital_id')) {
-            $user->digital_id = $request->file('digital_id')->store('digital_ids');
+             $digitalIdFile = $request->file('digital_id');
+            $filename = uniqid() . '.' . $digitalIdFile->getClientOriginalExtension();
+            $digitalIdFile->move(public_path('digital_ids'), $filename);
+            $user->digital_id = 'digital_ids/' . $filename;
         }
-
+        
+      
+            
+             
         $user->first_name = $request->first_name ?? $user->first_name;
         $user->last_name = $request->last_name ?? $user->last_name;
         $user->email = $request->email ?? $user->email;
         $user->phone = $request->phone ?? $user->phone;
-        $user->address = $request->address ?? $user->address;
+        $user->adress = $request->adress ?? $user->adress;
         $user->city = $request->city ?? $user->city;
-        $user->birth_date = $request->birth_date ?? $user->birth_date;
+        $user->birth_Date = $request->birth_Date ?? $user->birth_Date;
         $user->role = $request->role ?? $user->role;
-
-        if ($request->filled('password')) {
-            $user->hash_password = Hash::make($request->password);
-        }
+        
 
         $user->save();
 

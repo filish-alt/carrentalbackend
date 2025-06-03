@@ -18,6 +18,7 @@ use App\Http\Controllers\VerificationController;
 use Laravel\Socialite\Facades\Socialite;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AdminRegistrationController;
+use App\Http\Controllers\Admin\RoleController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
@@ -67,7 +68,16 @@ Route::get('/cars/{car}/images', [CarController::class, 'getCarImages']);
 Route::get('/cars/{car}/reviews', [ReviewController::class, 'reviewsForCar']);
 
 Route::middleware('auth:sanctum')->group(function () {
+
     Route::post('/adminregister', [AdminRegistrationController::class, 'register']);
+     
+    Route::middleware(['App\Http\Middleware\AdminMiddleware'])->group(function () {
+        Route::get('/users/by-type', [AdminController::class, 'usersByType']);
+        Route::get('/permissions', [RoleController::class, 'index']);
+        Route::post('/createrole', [RoleController::class, 'createRole']);
+        Route::post('/assignRole', [RoleController::class, 'assignRole']);
+    });
+  
 
     Route::post('/update-password', [AuthController::class, 'updatePassword']);
     Route::patch('/user/profile-picture', [UserController::class, 'updateProfilePicture']);
@@ -98,7 +108,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bookings/admin/{id}', [BookingController::class, 'adminShow']);        // View booking details
     Route::patch('/bookings/admin/{id}/cancel', [BookingController::class, 'adminCancel']); // Cancel booking
     
-    Route::get('/users', [UserController::class, 'getAllUsers']);
+    Route::middleware(['Spatie\Permission\Middleware\PermissionMiddleware:view users'])->get('/users', [UserController::class, 'getAllUsers']);
     Route::get('/users/{id}', [UserController::class, 'getUserById']);
     Route::put('/users/{id}', [UserController::class, 'updateUser']);
     Route::patch('/users/{id}/ban', [UserController::class, 'banUser']);     // Ban a user
@@ -109,7 +119,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('cars', [CarController::class, 'store']);
     Route::put('cars/{car}', [CarController::class, 'update']);
     Route::delete('cars/{car}', [CarController::class, 'destroy']);
-    Route::patch('/cars/{id}/approve', [CarController::class, 'approveCar']); // Approve car listing
+Route::patch('/cars/{id}/approve', [CarController::class, 'approveCar']); // Approve car listing
     Route::patch('/cars/{id}/reject', [CarController::class, 'rejectCar']);   // Reject car listing
     Route::patch('/cars/{id}/block', [CarController::class, 'blockCar']);     // Block car
 
