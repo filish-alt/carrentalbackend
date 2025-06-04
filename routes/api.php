@@ -22,6 +22,8 @@ use App\Http\Controllers\Admin\RoleController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
+use App\Http\Controllers\HomeController;
+
 
 
 
@@ -66,6 +68,13 @@ Route::get('cars', [CarController::class, 'index']);
 Route::get('cars/{car}', [CarController::class, 'show']);
 Route::get('/cars/{car}/images', [CarController::class, 'getCarImages']);
 Route::get('/cars/{car}/reviews', [ReviewController::class, 'reviewsForCar']);
+
+Route::apiResource('homes', HomeController::class);
+Route::get('homes/{id}/images', [HomeController::class, 'getHomeImages']);
+Route::post('homes/{id}/approve', [HomeController::class, 'approveHome']);
+Route::post('homes/{id}/reject', [HomeController::class, 'rejectHome']);
+Route::post('homes/{id}/block', [HomeController::class, 'blockHome']);
+Route::get('search/homes', [HomeController::class, 'search']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
