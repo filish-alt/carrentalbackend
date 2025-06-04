@@ -80,7 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
   
 
     Route::post('/update-password', [AuthController::class, 'updatePassword']);
-    Route::patch('/user/profile-picture', [UserController::class, 'updateProfilePicture']);
+    Route::post('/user/profile-picture', [UserController::class, 'updateProfilePicture']);
     Route::patch('/user/toggle-2fa', [UserController::class, 'toggleTwoFactor']);
     Route::delete('/account', [UserController::class, 'deleteAccount']);
 
@@ -108,7 +108,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bookings/admin/{id}', [BookingController::class, 'adminShow']);        // View booking details
     Route::patch('/bookings/admin/{id}/cancel', [BookingController::class, 'adminCancel']); // Cancel booking
     
-    Route::middleware(['Spatie\Permission\Middleware\PermissionMiddleware:view users'])->get('/users', [UserController::class, 'getAllUsers']);
+
+    Route::get('/users', [UserController::class, 'getAllUsers']);
     Route::get('/users/{id}', [UserController::class, 'getUserById']);
     Route::put('/users/{id}', [UserController::class, 'updateUser']);
     Route::patch('/users/{id}/ban', [UserController::class, 'banUser']);     // Ban a user

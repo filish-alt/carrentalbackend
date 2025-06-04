@@ -16,34 +16,44 @@ class UserController extends Controller
  // update user profile picture
 public function updateProfilePicture(Request $request)
 {
+    // Validate input
     $request->validate([
         'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
     ]);
 
+    // Check if file was uploaded
+    if (!$request->hasFile('profile_picture')) {
+        return response()->json(['error' => 'No profile picture uploaded'], 400);
+    }
+
     $user = auth()->user();
     $file = $request->file('profile_picture');
 
-
-    // Handle old profile picture deletion
-    if ($user->profile_picture && file_exists(public_path('profile_pictures/' . basename($user->profile_picture)))) {
-        unlink(public_path('profile_pictures/' . basename($user->profile_picture)));
+    // Delete old profile picture if it exists
+    if ($user->profile_picture && file_exists(public_path($user->profile_picture))) {
+        unlink(public_path($user->profile_picture));
     }
 
-    // Store the new uploaded image
-    $filename = uniqid() . '.' . $request->file('profile_picture')->getClientOriginalExtension();
-    $request->file('profile_picture')->move(public_path('profile_pictures'), $filename);
+    // Store the new file
+    $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+    $file->move(public_path('profile_pictures'), $filename);
 
-    $profilePictureUrl = url('profile_pictures/' . $filename);
-
-    // Save the new path in DB (if you save the relative path or full URL depends on your DB schema)
+    // Update user record
     $user->profile_picture = 'profile_pictures/' . $filename;
     $user->save();
+        dd([
+        'hasFile' => $request->hasFile('profile_picture'),
+        'file' => $request->file('profile_picture'),
+        'all' => $request->all(),
+    ]);
 
     return response()->json([
         'message' => 'Profile picture updated successfully',
-        'profile_picture_url' => $profilePictureUrl,
+        'profile_picture_url' => url('profile_pictures/' . $filename),
     ]);
 }
+
+
 
     // Get all users
     public function getAllUsers()
