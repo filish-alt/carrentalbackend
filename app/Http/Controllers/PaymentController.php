@@ -36,11 +36,6 @@ public function handleCallback(Request $request)
     return response()->json(['error' => 'Payment verification failed'], 400);
 }
 
-//simple route for front end redirects
-public function paymentSuccess()
-{
-    return view('payment.success'); 
-}
 
 
 }

@@ -78,7 +78,7 @@ class BookingController extends Controller
         'phone_number' => auth()->user()->phone,
         'tx_ref' => $tx_ref,
         'callback_url' =>  url('/api/chapa/callback'),
-        //'return_url' =>  ,
+        'return_url' => 'http://localhost:3000/payment/return?tx_ref=' . $tx_ref,
         'customization' => [
             'title' => 'Booking Payment',
             'description' => 'Payment for car rental',
