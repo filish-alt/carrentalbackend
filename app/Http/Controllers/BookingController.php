@@ -70,6 +70,11 @@ class BookingController extends Controller
                     'tx_ref' => $tx_ref,
                 ]);
 
+
+    $returnUrl = $request->header('Platform') === 'mobile'
+            ? env('MOBILE_RETURN_URL') . '?tx_ref=' . $tx_ref
+            : env('FRONTEND_RETURN_URL') . '?tx_ref=' . $tx_ref;
+   Log::info($returnUrl);
     $chapaData = [
         'amount' => $booking->total_price,
         'currency' => 'ETB',
@@ -78,7 +83,7 @@ class BookingController extends Controller
         'phone_number' => auth()->user()->phone,
         'tx_ref' => $tx_ref,
         'callback_url' =>  url('/api/chapa/callback'),
-        'return_url' => 'http://localhost:3000/payment/return?tx_ref=' . $tx_ref,
+        'return_url' => $returnUrl,
         'customization' => [
             'title' => 'Booking Payment',
             'description' => 'Payment for car rental',

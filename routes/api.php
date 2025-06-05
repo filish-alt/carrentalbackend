@@ -41,7 +41,7 @@ Route::post('/verify-2fa', [AuthController::class, 'verify2FA']);
 Route::get('/reviews', [ReviewController::class, 'index']);
 
 Route::get('/chapa/callback', [PaymentController::class, 'handleCallback'])->name('api.chapa.callback');
-Route::get('/chapa/success', [PaymentController::class, 'paymentSuccess'])->name('api.chapa.success');
+
 
 // General Info
 Route::post('/general-info', [LandingContentController::class, 'setGeneralInfo']);

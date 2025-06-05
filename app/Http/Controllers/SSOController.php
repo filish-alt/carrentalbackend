@@ -68,9 +68,10 @@ class SSOController extends Controller
         $isMobile = $state === 'mobile';
 
         Log::info('SSO redirect, platform: ' . $state);
-        $redirectTo = $isMobile
-            ? 'myapp://sso-callback?code=' . $code  
-            : 'http://localhost:3000/sso-callback?code=' . $code; 
+       $redirectTo = $isMobile
+            ? env('MOBILE_SSO_CALLBACK') . '?code=' . $code
+            : env('WEB_SSO_CALLBACK') . '?code=' . $code;
+
 
         return redirect($redirectTo);
 
