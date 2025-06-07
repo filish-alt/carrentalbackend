@@ -29,12 +29,15 @@ class HomeController extends Controller
             'country' => 'required|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'price_per_night' => 'required|numeric',
+            'price_per_night' => 'nullable|numeric',
+            'rent_per_month' => 'nullable|numeric',
+            'sell_price' => 'nullable|numeric',
             'bedrooms' => 'required|integer',
             'bathrooms' => 'required|integer',
             'max_guests' => 'required|integer',
             'property_type' => 'required|string',
             'status' => 'required|in:available,unavailable,approved,rejected,blocked',
+            'listing_type' => 'required|in:rent,sell,both',
             'amenities' => 'nullable|array',
             'check_in_time' => 'nullable',
             'check_out_time' => 'nullable',
@@ -56,11 +59,14 @@ class HomeController extends Controller
                 'latitude' => $request->latitude ?? 0,
                 'longitude' => $request->longitude ?? 0,
                 'price_per_night' => $request->price_per_night,
+                'rent_per_month' => $request->rent_per_month,
+                'sell_price' => $request->sell_price,
                 'bedrooms' => $request->bedrooms,
                 'bathrooms' => $request->bathrooms,
                 'max_guests' => $request->max_guests,
                 'property_type' => $request->property_type,
                 'status' => $request->status,
+                'listing_type' => $request->listing_type,
                 'amenities' => $request->amenities,
                 'check_in_time' => $request->check_in_time,
                 'check_out_time' => $request->check_out_time,
@@ -98,9 +104,34 @@ class HomeController extends Controller
 
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'title' => 'sometimes|string',
+            'description' => 'nullable|string',
+            'address' => 'sometimes|string',
+            'city' => 'sometimes|string',
+            'state' => 'sometimes|string',
+            'zip_code' => 'sometimes|string',
+            'country' => 'sometimes|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'price_per_night' => 'nullable|numeric',
+            'rent_per_month' => 'nullable|numeric',
+            'sell_price' => 'nullable|numeric',
+            'bedrooms' => 'sometimes|integer',
+            'bathrooms' => 'sometimes|integer',
+            'max_guests' => 'sometimes|integer',
+            'property_type' => 'sometimes|string',
+            'status' => 'sometimes|in:available,unavailable,approved,rejected,blocked',
+            'listing_type' => 'sometimes|in:rent,sell,both',
+            'amenities' => 'nullable|array',
+            'check_in_time' => 'nullable',
+            'check_out_time' => 'nullable',
+        ]);
+
         $home = Home::findOrFail($id);
         $home->update($request->all());
-        return response()->json($home);
+
+        return response()->json($home->fresh('images'));
     }
 
     public function destroy($id)
@@ -127,6 +158,10 @@ class HomeController extends Controller
 
         if ($request->has('max_guests')) {
             $query->where('max_guests', '>=', $request->max_guests);
+        }
+
+        if ($request->has('listing_type')) {
+            $query->where('listing_type', $request->listing_type);
         }
 
         return response()->json($query->with('images')->get());
