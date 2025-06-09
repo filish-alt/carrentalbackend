@@ -7,20 +7,26 @@ use Illuminate\Support\Str;
 use App\Models\Users;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
-
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Models\AuthCode; 
 
 class SSOController extends Controller
 {
 
-        
-    public function redirectToGoogle()
-    {
-       
-        return  Socialite::driver('google')->stateless()->redirect();
+     public function redirectToGoogle(Request $request)
+        {
+            $platform = $request->query('platform'); // get 'mobile' or 'web'
 
-    }
+            $redirectUrl = Socialite::driver('google')
+                ->stateless()
+                ->with(['state' => $platform]) // pass platform in state param
+                ->redirect()
+                ->getTargetUrl();
+
+            return redirect($redirectUrl);
+        }
+
 
     public function handleGoogleCallback()
     {
@@ -57,10 +63,17 @@ class SSOController extends Controller
             'expires_at' => Carbon::now()->addMinutes(10), 
         ]);
 
-        // Redirect to frontend with code only
-        return redirect()->to("http://localhost:3000/sso-callback?code={$code}");
-           
-    
+         // Detect if it's for mobile or web
+        $state = request()->query('state');
+        $isMobile = $state === 'mobile';
+
+        Log::info('SSO redirect, platform: ' . $state);
+        $redirectTo = $isMobile
+            ? 'myapp://sso-callback?code=' . $code  
+            : 'http://localhost:3000/sso-callback?code=' . $code; 
+
+        return redirect($redirectTo);
+
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

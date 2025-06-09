@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Users;
+use Illuminate\Http\JsonResponse;
+
 class AdminController extends Controller
 {
     //Admin see soft delte users
@@ -52,4 +54,34 @@ public function getUsersByStatus($status)
         'users' => $users,
     ]);
 }
+
+public function usersByType(Request $request): JsonResponse
+{
+    $type = $request->query('type');
+
+    switch ($type) {
+        case 'owner':
+            $users = Users::whereHas('cars')->get();
+            break;
+
+        case 'renter':
+            $users = Users::whereHas('bookings')->get();
+            break;
+
+        case 'both':
+            $users = Users::whereHas('cars')->whereHas('bookings')->get();
+            break;
+
+        default:
+            return response()->json([
+                'message' => 'Invalid or missing type. Use "owner", "renter", or "both".'
+            ], 400);
+    }
+
+    return response()->json([
+        'users' => $users,
+        'type' => $type,
+    ]);
+}
+
 }

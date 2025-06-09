@@ -35,6 +35,12 @@ class BookingController extends Controller
           if ($car->status !== 'available') {
               return response()->json(['error' => 'Car is not available for booking'], 400);
           }
+
+            // Prevent booking own car
+          if ($car->owner_id === auth()->id()) {
+            return $this->errorResponse("You Can't Book Your Own car", null, 403);
+           }
+            
       
           $overlappingBooking = Booking :: where('car_id',$car->id)
              ->where(function ($query) use ($data){

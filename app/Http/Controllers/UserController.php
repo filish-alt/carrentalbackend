@@ -15,30 +15,46 @@ class UserController extends Controller
 {
  // update user profile picture
 public function updateProfilePicture(Request $request)
-  {
+{
+    // Validate input
     $request->validate([
         'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
     ]);
 
-    $user = auth()->user();
-
-    // Store the uploaded image
-    $path = $request->file('profile_picture')->store('profile_pictures', 'public');
-
-    //  delete old picture
-    if ($user->profile_picture) {
-        Storage::disk('public')->delete($user->profile_picture);
+    // Check if file was uploaded
+    if (!$request->hasFile('profile_picture')) {
+        return response()->json(['error' => 'No profile picture uploaded'], 400);
     }
 
-    // Save the new path
-    $user->profile_picture = $path;
+    $user = auth()->user();
+    $file = $request->file('profile_picture');
+
+    // Delete old profile picture if it exists
+    if ($user->profile_picture && file_exists(public_path($user->profile_picture))) {
+        unlink(public_path($user->profile_picture));
+    }
+
+    // Store the new file
+    $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+    $file->move(public_path('profile_pictures'), $filename);
+
+    // Update user record
+    $user->profile_picture = 'profile_pictures/' . $filename;
     $user->save();
+        dd([
+        'hasFile' => $request->hasFile('profile_picture'),
+        'file' => $request->file('profile_picture'),
+        'all' => $request->all(),
+    ]);
 
     return response()->json([
         'message' => 'Profile picture updated successfully',
-        'profile_picture_url' => asset('storage/' . $path),
+        'profile_picture_url' => url('profile_pictures/' . $filename),
     ]);
 }
+
+
+
     // Get all users
     public function getAllUsers()
     {
@@ -81,36 +97,42 @@ public function updateProfilePicture(Request $request)
             'password'         => 'nullable|string|min:6|confirmed',
             'driver_liscence'  => 'nullable|file|mimes:jpg,jpeg,png,pdf',
             'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-            'address'          => 'nullable|string|max:255',
+            'adress'          => 'nullable|string|max:255',
             'city'             => 'nullable|string|max:100',
-            'birth_date'       => 'nullable|date',
+            'birth_Date'       => 'nullable|date',
             'role'             => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-
+        
         if ($request->hasFile('driver_liscence')) {
-            $user->driver_liscence = $request->file('driver_liscence')->store('driver_licences');
+        $driverLicenseFile = $request->file('driver_liscence');
+        $filename = uniqid() . '.' . $request->file('driver_liscence')->getClientOriginalExtension();
+        $path = $request->file('driver_liscence')->move(public_path('driver_licences'), $filename);
+        $user->driver_license = 'driver_liscence/' . $filename;
         }
 
         if ($request->hasFile('digital_id')) {
-            $user->digital_id = $request->file('digital_id')->store('digital_ids');
+             $digitalIdFile = $request->file('digital_id');
+            $filename = uniqid() . '.' . $digitalIdFile->getClientOriginalExtension();
+            $digitalIdFile->move(public_path('digital_ids'), $filename);
+            $user->digital_id = 'digital_ids/' . $filename;
         }
-
+        
+      
+            
+             
         $user->first_name = $request->first_name ?? $user->first_name;
         $user->last_name = $request->last_name ?? $user->last_name;
         $user->email = $request->email ?? $user->email;
         $user->phone = $request->phone ?? $user->phone;
-        $user->address = $request->address ?? $user->address;
+        $user->adress = $request->adress ?? $user->adress;
         $user->city = $request->city ?? $user->city;
-        $user->birth_date = $request->birth_date ?? $user->birth_date;
+        $user->birth_Date = $request->birth_Date ?? $user->birth_Date;
         $user->role = $request->role ?? $user->role;
-
-        if ($request->filled('password')) {
-            $user->hash_password = Hash::make($request->password);
-        }
+        
 
         $user->save();
 
