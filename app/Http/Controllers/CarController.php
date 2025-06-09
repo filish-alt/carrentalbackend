@@ -15,7 +15,7 @@ class CarController extends Controller
 {
     public function index()
     {
-        return Car::all();
+        return Car::with('images')->get();
     }
 
     public function store(Request $request)
@@ -24,7 +24,7 @@ class CarController extends Controller
             'owner_id' => 'required|integer',
             'make'  =>  'required|string',
             'model' => 'required|string',
-            'vin'   =>   'nullable|string|unique:cars,vin',
+            'vin'   => 'nullable|string|unique:cars,vin',
             'seating_capacity' => 'required|integer',
             'license_plate' => 'required|string|unique:cars,license_plate',
             'status' => 'required|string',
@@ -36,6 +36,14 @@ class CarController extends Controller
             'pickup_location' => 'nullable|string',
             'return_location' => 'nullable|string',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+
+            // Sale fields
+            'listing_type' => 'required|in:rent,sell,both',
+            'sell_price' => 'nullable|numeric',
+            'is_negotiable' => 'nullable|boolean',
+            'mileage' => 'nullable|integer',
+            'year' => 'nullable|integer',
+            'condition' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -55,56 +63,78 @@ class CarController extends Controller
                 'location_long' => $request->location_long ?? 38.8101,
                 'pickup_location' => $request->pickup_location,
                 'return_location' => $request->return_location,
+
+                // Sale fields
+                'listing_type' => $request->listing_type,
+                'sell_price' => $request->sell_price,
+                'is_negotiable' => $request->is_negotiable ?? false,
+                'mileage' => $request->mileage,
+                'year' => $request->year,
+                'condition' => $request->condition,
             ]);
 
-        //  if ($request->hasFile('images')) {
-        //         foreach ($request->file('images') as $image) {
-        //             $path = $image->store('car_images', 'public');
-    
-        //             CarImage::create([
-        //                 'car_id' => $car->id,
-        //                 'image_path' => $path,
-        //             ]);
-        //         }
-        //     }
-          if ($request->hasFile('images')) {
+            if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $image) {
-                $filename = time() . '_' . $image->getClientOriginalName();
+                    $filename = time() . '_' . $image->getClientOriginalName();
+                    $destinationPath = base_path('../public_html/car_images');
+                    $image->move($destinationPath, $filename);
 
-        // Save to public_html/car_images/
-        $destinationPath = base_path('../public_html/car_images'); // outside Laravel project folder, directly in public_html
-        $image->move($destinationPath, $filename);
-        
                     CarImage::create([
                         'car_id' => $car->id,
-                         'image_path' => 'car_images/' . $filename,
+                        'image_path' => 'car_images/' . $filename,
                     ]);
                 }
             }
-      DB::commit();
 
-        return response()->json([
-            'message' => 'Car and images created successfully',
-            'car' => $car->load('images'),
-        ], 201);
-    
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
-    }
+            DB::commit();
 
+            return response()->json([
+                'message' => 'Car and images created successfully',
+                'car' => $car->load('images'),
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
     }
 
     public function show($id)
     {
-        return Car::findOrFail($id);
+        return Car::with('images')->findOrFail($id);
     }
 
     public function update(Request $request, $id)
     {
         $car = Car::findOrFail($id);
+
+        $request->validate([
+            'make' => 'sometimes|string',
+            'model' => 'sometimes|string',
+            'vin' => 'nullable|string|unique:cars,vin,' . $car->id,
+            'seating_capacity' => 'sometimes|integer',
+            'license_plate' => 'sometimes|string|unique:cars,license_plate,' . $car->id,
+            'status' => 'sometimes|string',
+            'price_per_day' => 'sometimes|numeric',
+            'fuel_type' => 'sometimes|string',
+            'transmission' => 'sometimes|string',
+            'location_lat' => 'nullable|numeric',
+            'location_long' => 'nullable|numeric',
+            'pickup_location' => 'nullable|string',
+            'return_location' => 'nullable|string',
+
+            // Sale fields
+            'listing_type' => 'sometimes|in:rent,sell,both',
+            'sell_price' => 'nullable|numeric',
+            'is_negotiable' => 'nullable|boolean',
+            'mileage' => 'nullable|integer',
+            'year' => 'nullable|integer',
+            'condition' => 'nullable|string',
+        ]);
+
         $car->update($request->all());
-        return $car;
+
+        return response()->json($car->fresh('images'));
     }
 
     public function destroy($id)
@@ -113,10 +143,7 @@ class CarController extends Controller
         return response()->noContent();
     }
 
-    //search car by different attributes
-
-
-  public function search(Request $request)
+    public function search(Request $request)
     {
         $query = Car::query();
 
@@ -136,68 +163,63 @@ class CarController extends Controller
             $query->where('transmission', $request->transmission);
         }
 
-        $cars = $query->get();
+        if ($request->has('listing_type')) {
+            $query->where('listing_type', $request->listing_type);
+        }
 
-        return response()->json($cars);
+        return response()->json($query->with('images')->get());
     }
-public function getCarImages($carId)
+
+    public function getCarImages($carId)
     {
-        // Fetch the car with its related images
         $car = Car::with('images')->find($carId);
-    
-        // Check if the car exists
+
         if (!$car) {
             return response()->json(['message' => 'Car not found'], 404);
         }
-    
+
         return response()->json([
             'message' => 'Car images fetched successfully',
             'images' => $car->images,
         ]);
     }
 
-// Approve a car listing
-public function approveCar($id)
-{
-    $car = Car::find($id);
-    if (!$car) {
-        return response()->json(['message' => 'Car not found'], 404);
+    public function approveCar($id)
+    {
+        $car = Car::find($id);
+        if (!$car) {
+            return response()->json(['message' => 'Car not found'], 404);
+        }
+
+        $car->status = 'approved';
+        $car->save();
+
+        return response()->json(['message' => 'Car listing approved']);
     }
 
-    $car->status = 'approved';
-    $car->save();
+    public function rejectCar($id)
+    {
+        $car = Car::find($id);
+        if (!$car) {
+            return response()->json(['message' => 'Car not found'], 404);
+        }
 
-    return response()->json(['message' => 'Car listing approved']);
-}
+        $car->status = 'rejected';
+        $car->save();
 
-// Reject a car listing
-public function rejectCar($id)
-{
-    $car = Car::find($id);
-    if (!$car) {
-        return response()->json(['message' => 'Car not found'], 404);
+        return response()->json(['message' => 'Car listing rejected']);
     }
 
-    $car->status = 'rejected';
-    $car->save();
+    public function blockCar($id)
+    {
+        $car = Car::find($id);
+        if (!$car) {
+            return response()->json(['message' => 'Car not found'], 404);
+        }
 
-    return response()->json(['message' => 'Car listing rejected']);
-}
+        $car->status = 'blocked';
+        $car->save();
 
-// Block a car
-public function blockCar($id)
-{
-    $car = Car::find($id);
-    if (!$car) {
-        return response()->json(['message' => 'Car not found'], 404);
+        return response()->json(['message' => 'Car has been blocked']);
     }
-
-    $car->status = 'blocked';
-    $car->save();
-
-    return response()->json(['message' => 'Car has been blocked']);
-}
-
-    
-
 }

@@ -42,6 +42,19 @@ class HomeController extends Controller
             'check_in_time' => 'nullable',
             'check_out_time' => 'nullable',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+
+            // New fields
+            'furnished' => 'nullable|in:furnished,semi-furnished,unfurnished',
+            'area_sqm' => 'nullable|numeric',
+            'seating_capacity' => 'nullable|integer',
+            'parking' => 'nullable|string',
+            'storage' => 'nullable|in:Available,Not Available',
+            'loading_zone' => 'nullable|in:Available,Not Available',
+            'payment_frequency' => 'nullable|in:one time,Daily,Weekly,Monthly,Yearly',
+            'power_supply' => 'nullable|in:Single Phase,Three Phase',
+            'kitchen' => 'nullable|in:Traditional,Modern,Both,none',
+            'property_purposes' => 'nullable|array',
+            'property_purposes.*' => 'in:residential,office,business,store,celebration',
         ]);
 
         DB::beginTransaction();
@@ -70,6 +83,18 @@ class HomeController extends Controller
                 'amenities' => $request->amenities,
                 'check_in_time' => $request->check_in_time,
                 'check_out_time' => $request->check_out_time,
+
+                // New fields
+                'furnished' => $request->furnished,
+                'area_sqm' => $request->area_sqm,
+                'seating_capacity' => $request->seating_capacity,
+                'parking' => $request->parking,
+                'storage' => $request->storage,
+                'loading_zone' => $request->loading_zone,
+                'payment_frequency' => $request->payment_frequency,
+                'power_supply' => $request->power_supply,
+                'kitchen' => $request->kitchen,
+                'property_purposes' => $request->property_purposes,
             ]);
 
             if ($request->hasFile('images')) {
@@ -126,6 +151,19 @@ class HomeController extends Controller
             'amenities' => 'nullable|array',
             'check_in_time' => 'nullable',
             'check_out_time' => 'nullable',
+
+            // New fields
+            'furnished' => 'sometimes|in:furnished,semi-furnished,unfurnished',
+            'area_sqm' => 'nullable|numeric',
+            'seating_capacity' => 'nullable|integer',
+            'parking' => 'nullable|string',
+            'storage' => 'nullable|in:Available,Not Available',
+            'loading_zone' => 'nullable|in:Available,Not Available',
+            'payment_frequency' => 'nullable|in:one time,Daily,Weekly,Monthly,Yearly',
+            'power_supply' => 'nullable|in:Single Phase,Three Phase',
+            'kitchen' => 'nullable|in:Traditional,Modern,Both,none',
+            'property_purposes' => 'nullable|array',
+            'property_purposes.*' => 'in:residential,office,business,store,celebration',
         ]);
 
         $home = Home::findOrFail($id);
