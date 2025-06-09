@@ -20,6 +20,8 @@ class Home extends Model
         'latitude',
         'longitude',
         'price_per_night',
+        'rent_per_month',
+        'sell_price',
         'bedrooms',
         'bathrooms',
         'max_guests',
@@ -27,11 +29,16 @@ class Home extends Model
         'status',
         'amenities',
         'check_in_time',
-        'check_out_time'
+        'check_out_time',
+        'listing_type', // added field
     ];
 
     protected $casts = [
         'amenities' => 'array',
+        'rent_per_month' => 'float',
+        'sell_price' => 'float',
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function owner()
