@@ -23,6 +23,8 @@ use App\Http\Controllers\Admin\RoleController;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
 use App\Http\Controllers\HomeController;
+use Illuminate\Http\Request;
+
 
 
 
@@ -69,7 +71,12 @@ Route::get('cars/{car}', [CarController::class, 'show']);
 Route::get('/cars/{car}/images', [CarController::class, 'getCarImages']);
 Route::get('/cars/{car}/reviews', [ReviewController::class, 'reviewsForCar']);
 
-Route::apiResource('homes', HomeController::class);
+// Homes routes in detail
+Route::get('/homes', [HomeController::class, 'index']);           // List all homes
+Route::post('/homes', [HomeController::class, 'store']);          // Create a new home
+Route::get('/homes/{id}', [HomeController::class, 'show']);       // Get home by ID
+Route::put('/homes/{id}', [HomeController::class, 'update']);     // Update home by ID
+Route::delete('/homes/{id}', [HomeController::class, 'destroy']); // Delete home by ID
 Route::get('homes/{id}/images', [HomeController::class, 'getHomeImages']);
 Route::post('homes/{id}/approve', [HomeController::class, 'approveHome']);
 Route::post('homes/{id}/reject', [HomeController::class, 'rejectHome']);
