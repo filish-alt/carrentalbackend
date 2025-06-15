@@ -9,11 +9,10 @@ use Illuminate\Auth\Authenticatable as AuthenticatableTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasRoles;
 
 class SuperAdmin extends Model implements Authenticatable, AuthorizableContract
 {
-    use HasApiTokens, HasFactory, HasRoles, AuthenticatableTrait, Authorizable;
+    use HasApiTokens, HasFactory, AuthenticatableTrait, Authorizable;
 
     protected $table = 'super_admins';
 

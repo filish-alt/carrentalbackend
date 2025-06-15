@@ -19,6 +19,7 @@ use Laravel\Socialite\Facades\Socialite;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AdminRegistrationController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\HomeBookingController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
@@ -83,6 +84,8 @@ Route::post('homes/{id}/reject', [HomeController::class, 'rejectHome']);
 Route::post('homes/{id}/block', [HomeController::class, 'blockHome']);
 Route::get('search/homes', [HomeController::class, 'search']);
 
+
+
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/adminregister', [AdminRegistrationController::class, 'register']);
@@ -123,7 +126,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bookings/admin', [BookingController::class, 'adminIndex']);            // List all bookings
     Route::get('/bookings/admin/{id}', [BookingController::class, 'adminShow']);        // View booking details
     Route::patch('/bookings/admin/{id}/cancel', [BookingController::class, 'adminCancel']); // Cancel booking
-    
+
+    Route::prefix('home-bookings')->controller(HomeBookingController::class)->group(function () {
+        Route::post('/', 'store');
+        Route::get('/', 'index');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}/cancel', 'cancel');
+    });
+
+    Route::prefix('admin/home-bookings')->controller(HomeBookingController::class)->group(function () {
+        Route::get('/', 'adminIndex');
+        Route::get('/{id}', 'adminShow');
+        Route::put('/{id}/cancel', 'adminCancel');
+    });
 
     Route::get('/users', [UserController::class, 'getAllUsers']);
     Route::get('/users/{id}', [UserController::class, 'getUserById']);
@@ -136,7 +151,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('cars', [CarController::class, 'store']);
     Route::put('cars/{car}', [CarController::class, 'update']);
     Route::delete('cars/{car}', [CarController::class, 'destroy']);
-Route::patch('/cars/{id}/approve', [CarController::class, 'approveCar']); // Approve car listing
+    Route::patch('/cars/{id}/approve', [CarController::class, 'approveCar']); // Approve car listing
     Route::patch('/cars/{id}/reject', [CarController::class, 'rejectCar']);   // Reject car listing
     Route::patch('/cars/{id}/block', [CarController::class, 'blockCar']);     // Block car
 
