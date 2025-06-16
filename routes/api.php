@@ -20,6 +20,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AdminRegistrationController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\HomeBookingController;
+use App\Http\Controllers\ListingFeeController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
@@ -44,7 +45,7 @@ Route::post('/verify-2fa', [AuthController::class, 'verify2FA']);
 Route::get('/reviews', [ReviewController::class, 'index']);
 
 Route::get('/chapa/callback', [PaymentController::class, 'handleCallback'])->name('api.chapa.callback');
-
+Route::get('chapa/listing-callback', [PaymentController::class, 'handleCallback']);
 
 // General Info
 Route::post('/general-info', [LandingContentController::class, 'setGeneralInfo']);
@@ -89,12 +90,14 @@ Route::get('search/homes', [HomeController::class, 'search']);
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/adminregister', [AdminRegistrationController::class, 'register']);
-     
+    Route::get('/getalladmin', [AdminRegistrationController::class, 'getAllAdmin']);
+    
     Route::middleware(['App\Http\Middleware\AdminMiddleware'])->group(function () {
         Route::get('/users/by-type', [AdminController::class, 'usersByType']);
         Route::get('/permissions', [RoleController::class, 'index']);
         Route::post('/createrole', [RoleController::class, 'createRole']);
         Route::post('/assignRole', [RoleController::class, 'assignRole']);
+        Route::apiResource('listing-fees', ListingFeeController::class);
     });
   
 

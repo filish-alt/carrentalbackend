@@ -63,6 +63,17 @@ class AdminRegistrationController extends Controller
             
             return response()->json(['message' => 'Registration failed:'], 500);
         }
+ 
+    }
+
+      // Get all users
+    public function getAllAdmin()
+    {
+        $users = SuperAdmin::all();
+        return response()->json([
+            'message' => 'All admin fetched successfully.',
+            'users' => $users,
+        ]);
     }
 }
 

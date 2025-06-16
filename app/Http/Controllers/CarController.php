@@ -5,8 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use App\Models\Car;
 use App\Models\CarImage;
+use App\Models\ListingFee;
+use App\Models\Platformpayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use Exception;
 
 
@@ -40,7 +44,7 @@ class CarController extends Controller
             // Sale fields
             'listing_type' => 'required|in:rent,sell,both',
             'sell_price' => 'nullable|numeric',
-            'is_negotiable' => 'nullable|boolean',
+            'is_negotiable' => 'nullable',
             'mileage' => 'nullable|integer',
             'year' => 'nullable|integer',
             'condition' => 'nullable|string',
@@ -55,7 +59,7 @@ class CarController extends Controller
                 'vin' => $request->vin,
                 'seating_capacity' => $request->seating_capacity,
                 'license_plate' => $request->license_plate,
-                'status' => $request->status,
+                'status' =>'pending_payment',
                 'price_per_day' => $request->price_per_day,
                 'fuel_type' => $request->fuel_type,
                 'transmission' => $request->transmission,
@@ -85,13 +89,60 @@ class CarController extends Controller
                     ]);
                 }
             }
+        // Generate tx_ref and save payment
+        $tx_ref = 'CARPOST-' . uniqid();
+        $fee = ListingFee::where('item_type', 'car')
+            ->whereIn('listing_type', ['rent', 'both'])
+            ->orderByDesc('id') // get the latest active fee
+            ->first();
+        if($fee) {
+          Platformpayment::create([
+            'item_id'=>$car->id,
+            'amount' => $fee->fee, // Set your fixed posting fee here
+            'currency' => $fee->currency,
+            'payment_status' => 'pending',
+            'payment_method' => 'chapa',
+            'transaction_date' => now(),
+            'tx_ref' => $tx_ref,
+        ]);
+    }
+    
+        DB::commit();
+        
+        $returnUrl = $request->header('Platform') === 'mobile'
+            ? env('Payment_MOBILE_RETURN_URL') . '?tx_ref=' . $tx_ref
+            : env('Payment_FRONTEND_RETURN_URL') . '?tx_ref=' . $tx_ref;
+        
+        $chapaData = [
+            'amount' => 200,
+            'currency' => 'ETB',
+            'email' => auth()->user()->email,
+            'first_name' => auth()->user()->first_name,
+            'phone_number' => auth()->user()->phone,
+            'tx_ref' => $tx_ref,
+            'callback_url' => url('/api/chapa/listing-callback'),
+            'return_url' => $returnUrl,
+            'customization' => [
+                'title' => 'Car Listing Fee',
+                'description' => 'Payment to publish your car listing.',
+            ],
+        ];
+     
+        Log::info('Chapa Listing Payment Data', $chapaData);
 
-            DB::commit();
+        $response = Http::withToken(env('CHAPA_SECRET_KEY'))
+            ->post(env('CHAPA_BASE_URL') . '/transaction/initialize', $chapaData);
 
+        $data = $response->json();
+
+        if ($response->successful() && isset($data['data']['checkout_url'])) {
             return response()->json([
-                'message' => 'Car and images created successfully',
-                'car' => $car->load('images'),
-            ], 201);
+                'message' => 'Car created. Redirect to Chapa for payment.',
+                'checkout_url' => $data['data']['checkout_url'],
+            ]);
+        }
+
+        return response()->json(['error' => 'Unable to redirect to Chapa.'], 500);
 
         } catch (\Exception $e) {
             DB::rollBack();
