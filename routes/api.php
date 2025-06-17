@@ -39,13 +39,14 @@ Route::get('/auth/google', [SSOController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [SSOController::class, 'handleGoogleCallback']);
 Route::post('/auth/exchange-code', [SSOController::class, 'exchangeCode']);
 
+
 Route::post('/send-reset-code', [PasswordResetController::class, 'sendResetCode']);
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 Route::post('/verify-2fa', [AuthController::class, 'verify2FA']);
 Route::get('/reviews', [ReviewController::class, 'index']);
 
 Route::get('/chapa/callback', [PaymentController::class, 'handleCallback'])->name('api.chapa.callback');
-Route::get('chapa/listing-callback', [PaymentController::class, 'handleCallback']);
+Route::get('/chapa/listing-callback', [PaymentController::class, 'listingCallback']);
 
 // General Info
 Route::post('/general-info', [LandingContentController::class, 'setGeneralInfo']);
