@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Payment;
 use App\Models\Platformpayment;
 use Illuminate\Http\Request;
+use App\Models\Car;
+use App\Models\Home;
+
 
 class PaymentController extends Controller
 {
@@ -42,7 +45,7 @@ public function handleCallback(Request $request)
 
 public function listingCallback(Request $request)
 {
-    $tx_ref = $request->get('tx_ref');
+    $tx_ref = $request->query('tx_ref');
 
     $payment = Platformpayment::where('tx_ref', $tx_ref)->first();
     if (!$payment) return response()->json(['error' => 'Listing payment not found'], 404);
