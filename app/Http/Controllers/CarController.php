@@ -114,7 +114,7 @@ class CarController extends Controller
             : env('Payment_FRONTEND_RETURN_URL') . '?tx_ref=' . $tx_ref;
         
         $chapaData = [
-            'amount' => 200,
+            'amount' => $fee->fee,
             'currency' => 'ETB',
             'email' => auth()->user()->email,
             'first_name' => auth()->user()->first_name,
