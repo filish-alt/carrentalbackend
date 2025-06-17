@@ -50,7 +50,7 @@ public function listingCallback(Request $request)
     $verify = Http::withToken(env('CHAPA_SECRET_KEY'))
         ->get(env('CHAPA_BASE_URL') . '/transaction/verify/' . $tx_ref);
 
-    if ($verify->successful() && $verify['data']['status'] === 'success') {
+    if ($verify->successful() && $verify->json('data.status') === 'success') {
         $payment->update(['payment_status' => 'successful']);
        
         
