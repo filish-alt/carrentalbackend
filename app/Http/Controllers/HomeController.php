@@ -82,7 +82,7 @@ class HomeController extends Controller
                 'bathrooms' => $request->bathrooms,
                 'max_guests' => $request->max_guests,
                 'property_type' => $request->property_type,
-                'status' => 'unavailable',
+                'status' => 'payment_pending',
                 'listing_type' => $request->listing_type,
                 'amenities' => $request->amenities,
                 'check_in_time' => $request->check_in_time,
@@ -122,6 +122,7 @@ class HomeController extends Controller
         if($fee) {
           Platformpayment::create([
             'item_id'=>$home->id,
+            'item_type'=>'home',
             'amount' => $fee->fee, 
             'currency' => $fee->currency,
             'payment_status' => 'pending',

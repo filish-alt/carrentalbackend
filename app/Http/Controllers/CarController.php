@@ -98,6 +98,7 @@ class CarController extends Controller
         if($fee) {
           Platformpayment::create([
             'item_id'=>$car->id,
+            'item_type'=>'car',
             'amount' => $fee->fee,
             'currency' => $fee->currency,
             'payment_status' => 'pending',
