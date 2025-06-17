@@ -52,7 +52,15 @@ public function listingCallback(Request $request)
 
     if ($verify->successful() && $verify['data']['status'] === 'success') {
         $payment->update(['payment_status' => 'successful']);
-        $payment->car()->update(['status' => 'available']); // Now the car is listed
+       
+        
+        // Update item status (car or home)
+        $item = $payment->item;
+        if ($item instanceof Car || $item instanceof Home) {
+            $item->update(['status' => 'available']);
+        }
+
+        
 
         return response()->json(['message' => 'Listing payment confirmed']);
     }

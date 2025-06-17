@@ -92,13 +92,13 @@ class CarController extends Controller
         // Generate tx_ref and save payment
         $tx_ref = 'CARPOST-' . uniqid();
         $fee = ListingFee::where('item_type', 'car')
-            ->whereIn('listing_type', ['rent', 'both'])
+            ->where('listing_type', $car->listing_type)
             ->orderByDesc('id') // get the latest active fee
             ->first();
         if($fee) {
           Platformpayment::create([
             'item_id'=>$car->id,
-            'amount' => $fee->fee, // Set your fixed posting fee here
+            'amount' => $fee->fee,
             'currency' => $fee->currency,
             'payment_status' => 'pending',
             'payment_method' => 'chapa',

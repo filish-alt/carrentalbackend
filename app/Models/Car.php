@@ -60,4 +60,9 @@ class Car extends Model
         return $this->hasMany(MaintenanceRecord::class);
     }
 
+      public function platformPayments()
+    {
+        return $this->morphMany(Platformpayment::class, 'item');
+    }
+
 }

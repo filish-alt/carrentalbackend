@@ -11,6 +11,7 @@ class Platformpayment extends Model
 
       protected $fillable = [
         'item_id',
+        'item_type',
         'amount',
         'payment_status', 
         'payment_method',   
@@ -22,4 +23,8 @@ class Platformpayment extends Model
         'transaction_date' => 'date',
     ];
 
+    public function item()
+    {
+        return $this->morphTo();
+    }
 }

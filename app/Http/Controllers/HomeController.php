@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Home;
 use App\Models\HomeImage;
+use App\Models\ListingFee;
+use App\Models\Platformpayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class HomeController extends Controller
 {
@@ -78,7 +82,7 @@ class HomeController extends Controller
                 'bathrooms' => $request->bathrooms,
                 'max_guests' => $request->max_guests,
                 'property_type' => $request->property_type,
-                'status' => $request->status,
+                'status' => 'unavailable',
                 'listing_type' => $request->listing_type,
                 'amenities' => $request->amenities,
                 'check_in_time' => $request->check_in_time,
@@ -110,12 +114,59 @@ class HomeController extends Controller
                 }
             }
 
-            DB::commit();
+        $tx_ref = 'HOMEPOST-' . uniqid();
+        $fee = ListingFee::where('item_type', 'home')
+            ->where('listing_type', $home->listing_type)
+            ->orderByDesc('id') // get the latest active fee
+            ->first();
+        if($fee) {
+          Platformpayment::create([
+            'item_id'=>$home->id,
+            'amount' => $fee->fee, 
+            'currency' => $fee->currency,
+            'payment_status' => 'pending',
+            'payment_method' => 'chapa',
+            'transaction_date' => now(),
+            'tx_ref' => $tx_ref,
+        ]);
+    }
+    
+        DB::commit();
+        
+        $returnUrl = $request->header('Platform') === 'mobile'
+            ? env('Payment_MOBILE_RETURN_URL') . '?tx_ref=' . $tx_ref
+            : env('Payment_FRONTEND_RETURN_URL') . '?tx_ref=' . $tx_ref;
+        
+        $chapaData = [
+            'amount' => $fee->fee,
+            'currency' => 'ETB',
+            'email' => auth()->user()->email,
+            'first_name' => auth()->user()->first_name,
+            'phone_number' => auth()->user()->phone,
+            'tx_ref' => $tx_ref,
+            'callback_url' => url('/api/chapa/listing-callback'),
+            'return_url' => $returnUrl,
+            'customization' => [
+                'title' => 'Home Listing Fee',
+                'description' => 'Payment to publish your home listing.',
+            ],
+        ];
+     
+        Log::info('Chapa Listing Payment Data', $chapaData);
 
+        $response = Http::withToken(env('CHAPA_SECRET_KEY'))
+            ->post(env('CHAPA_BASE_URL') . '/transaction/initialize', $chapaData);
+
+        $data = $response->json();
+
+        if ($response->successful() && isset($data['data']['checkout_url'])) {
             return response()->json([
-                'message' => 'Home and images created successfully',
-                'home' => $home->load('images'),
-            ], 201);
+                'message' => 'Home created. Redirect to Chapa for payment.',
+                'checkout_url' => $data['data']['checkout_url'],
+            ]);
+        }
+
+        return response()->json(['error' => 'Unable to redirect to Chapa.'], 500);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);

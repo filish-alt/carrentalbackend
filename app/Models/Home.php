@@ -67,4 +67,9 @@ class Home extends Model
     {
         return $this->belongsTo(User::class, 'owner_id');
     }
+
+    public function platformPayments()
+    {
+        return $this->morphMany(Platformpayment::class, 'item');
+    }
 }

@@ -76,14 +76,9 @@ Route::get('/cars/{car}/reviews', [ReviewController::class, 'reviewsForCar']);
 
 // Homes routes in detail
 Route::get('/homes', [HomeController::class, 'index']);           // List all homes
-Route::post('/homes', [HomeController::class, 'store']);          // Create a new home
 Route::get('/homes/{id}', [HomeController::class, 'show']);       // Get home by ID
-Route::put('/homes/{id}', [HomeController::class, 'update']);     // Update home by ID
-Route::delete('/homes/{id}', [HomeController::class, 'destroy']); // Delete home by ID
+
 Route::get('homes/{id}/images', [HomeController::class, 'getHomeImages']);
-Route::post('homes/{id}/approve', [HomeController::class, 'approveHome']);
-Route::post('homes/{id}/reject', [HomeController::class, 'rejectHome']);
-Route::post('homes/{id}/block', [HomeController::class, 'blockHome']);
 Route::get('search/homes', [HomeController::class, 'search']);
 
 
@@ -92,13 +87,20 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/adminregister', [AdminRegistrationController::class, 'register']);
     Route::get('/getalladmin', [AdminRegistrationController::class, 'getAllAdmin']);
-    
+
+    Route::post('/homes', [HomeController::class, 'store']); 
+    Route::put('/homes/{id}', [HomeController::class, 'update']);     // Update home by ID 
+    Route::delete('/homes/{id}', [HomeController::class, 'destroy']);
+
     Route::middleware(['App\Http\Middleware\AdminMiddleware'])->group(function () {
         Route::get('/users/by-type', [AdminController::class, 'usersByType']);
         Route::get('/permissions', [RoleController::class, 'index']);
         Route::post('/createrole', [RoleController::class, 'createRole']);
         Route::post('/assignRole', [RoleController::class, 'assignRole']);
         Route::apiResource('listing-fees', ListingFeeController::class);
+        Route::post('homes/{id}/approve', [HomeController::class, 'approveHome']);
+        Route::post('homes/{id}/reject', [HomeController::class, 'rejectHome']);
+        Route::post('homes/{id}/block', [HomeController::class, 'blockHome']);
     });
   
 
