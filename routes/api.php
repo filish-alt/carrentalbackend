@@ -40,6 +40,8 @@ Route::post('/auth/exchange-code', [SSOController::class, 'exchangeCode']);
 
 Route::post('/send-reset-code', [PasswordResetController::class, 'sendResetCode']);
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+Route::post('/send-verification-code', [PasswordResetController::class, 'forgotPassword']);
+Route::post('/verifyEmailOtp', [AuthController::class, 'verifyEmailOtp']);
 Route::post('/verify-2fa', [AuthController::class, 'verify2FA']);
 Route::get('/reviews', [ReviewController::class, 'index']);
 
