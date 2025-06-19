@@ -12,7 +12,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\LandingContentController;
 use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\HomeReviewController;
+use App\Http\Controllers\HomereviewController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\VerificationController;
@@ -52,8 +52,8 @@ Route::post('/verify-2fa', [AuthController::class, 'verify2FA']);
 Route::get('/reviews', [ReviewController::class, 'index']);
 Route::get('/cars/{car}/reviews', [ReviewController::class, 'reviewsForCar']);
 
-Route::get('/home/reviews', [HomeReviewController::class, 'index']);
-Route::get('/home/{home}/reviews', [HomeReviewController::class, 'reviewsForHome']);
+Route::get('/home/reviews', [HomereviewController::class, 'index']);
+Route::get('/home/{home}/reviews', [HomereviewController::class, 'reviewsForHome']);
 
 Route::get('/chapa/callback', [PaymentController::class, 'handleCallback'])->name('api.chapa.callback');
 Route::get('/chapa/listing-callback', [PaymentController::class, 'listingCallback']);
@@ -128,9 +128,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-reviews', [ReviewController::class, 'myReviews']);
     Route::get('/my-car-reviews', [ReviewController::class, 'reviewsForMyCars']);
 
-    Route::post('/home/reviews', [HomeReviewController::class, 'store']);
-    Route::get('/home/my-reviews', [HomeReviewController::class, 'myhomeReviews']);
-    Route::get('/home/my-home-reviews', [HomeReviewController::class, 'reviewsForMyHomes']);
+    Route::post('/home/reviews', [HomereviewController::class, 'store']);
+    Route::get('/home/my-reviews', [HomereviewController::class, 'myhomeReviews']);
+    Route::get('/home/my-home-reviews', [HomereviewController::class, 'reviewsForMyHomes']);
 
     
     Route::post('/reviews', [ReviewController::class, 'store']);
