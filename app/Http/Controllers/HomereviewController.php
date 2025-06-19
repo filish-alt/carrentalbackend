@@ -17,9 +17,9 @@ class HomereviewController extends Controller
         'review_text' => 'required|string|max:1000',
     ]);
 
-    $review = Review::create([
+    $review = Homereview::create([
         'user_id' => auth()->id(),
-        'home_id' => $request->car_id,
+        'home_id' => $request->home_id,
         'rating' => $request->rating,
         'review_text' => $request->review_text,
     ]);
@@ -29,7 +29,7 @@ class HomereviewController extends Controller
 //get all reviews
 public function index()
 {
-    $reviews = Review::with(['user', 'home'])->get();
+    $reviews = Homereview::with(['user', 'home'])->get();
 
     return response()->json(['reviews' => $reviews]);
 }
@@ -37,7 +37,7 @@ public function index()
 //get review for specific home
 public function reviewsForHome(Home $home)
 {
-    $reviews = Review::where('home_id', $home->id)
+    $reviews = Homereview::where('home_id', $home->id)
         ->with(['user', 'home'])
         ->get();
 
@@ -47,7 +47,7 @@ public function reviewsForHome(Home $home)
 //get review given by the authenticated user
 public function myhomeReviews()
 {
-    $reviews = Review::where('user_id', auth()->id())->with('home')->get();
+    $reviews = Homereview::where('user_id', auth()->id())->with('home')->get();
 
     return response()->json(['reviews' => $reviews]);
 }
@@ -58,7 +58,7 @@ public function reviewsForMyHomes()
 {
     $userId = auth()->id();
 
-    $reviews = Review::whereHas('home', function ($query) use ($userId) {
+    $reviews = Homereview::whereHas('home', function ($query) use ($userId) {
         $query->where('owner_id', $userId);
     })->with(['user', 'home'])->get();
 
