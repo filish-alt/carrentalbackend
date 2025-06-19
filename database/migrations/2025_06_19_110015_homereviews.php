@@ -14,7 +14,7 @@ return new class extends Migration
          Schema::create('homereview', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('home_id')->constrained('homes')->onDelete('cascade');
+            $table->foreignId('home_id')->constrained()->onDelete('cascade');
             $table->integer('rating');
             $table->string('review_text');
             $table->timestamps();
@@ -27,5 +27,14 @@ return new class extends Migration
     public function down(): void
     {
     Schema::dropIfExists('homereview');
+    }
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        //
     }
 };
