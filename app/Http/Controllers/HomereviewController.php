@@ -12,7 +12,7 @@ class HomereviewController extends Controller
     public function store(Request $request)
 {
     $request->validate([
-        'home_id' => 'required|exists:home,id',
+        'home_id' => 'required|exists:homes,id',
         'rating' => 'required|integer|min:1|max:5',
         'review_text' => 'required|string|max:1000',
     ]);

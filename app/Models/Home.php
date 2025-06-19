@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Home extends Model
 {
-    use HasFactory; 
-protected $table = 'homes'; 
+    use HasFactory;  
+    protected $table = 'homes'; 
 
     protected $fillable = [
         'owner_id',
