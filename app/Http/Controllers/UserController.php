@@ -9,49 +9,46 @@ use Illuminate\Validation\Rule;
 use App\Models\Users;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Redis;
-
+use Illuminate\Support\Facades\File;
 
 class UserController extends Controller
 {
  // update user profile picture
+
+
+
 public function updateProfilePicture(Request $request)
 {
-    // Validate input
     $request->validate([
         'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
     ]);
 
-    // Check if file was uploaded
-    if (!$request->hasFile('profile_picture')) {
-        return response()->json(['error' => 'No profile picture uploaded'], 400);
-    }
-
     $user = auth()->user();
-    $file = $request->file('profile_picture');
 
     // Delete old profile picture if it exists
-    if ($user->profile_picture && file_exists(public_path($user->profile_picture))) {
-        unlink(public_path($user->profile_picture));
+    if ($user->profile_picture) {
+        $oldPath = base_path('../public_html/' . $user->profile_picture);
+        if (File::exists($oldPath)) {
+            File::delete($oldPath);
+        }
     }
 
-    // Store the new file
-    $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-    $file->move(public_path('profile_pictures'), $filename);
+    // Save new profile picture
+    $image = $request->file('profile_picture');
+    $filename = time() . '_' . $image->getClientOriginalName();
+    $destinationPath = base_path('../public_html/profile_pictures');
+    $image->move($destinationPath, $filename);
 
     // Update user record
     $user->profile_picture = 'profile_pictures/' . $filename;
     $user->save();
-        dd([
-        'hasFile' => $request->hasFile('profile_picture'),
-        'file' => $request->file('profile_picture'),
-        'all' => $request->all(),
-    ]);
 
     return response()->json([
-        'message' => 'Profile picture updated successfully',
-        'profile_picture_url' => url('profile_pictures/' . $filename),
+        'message' => 'Profile picture updated successfully.',
+        'profile_picture_url' => asset($user->profile_picture),
     ]);
 }
+
 
 
 
