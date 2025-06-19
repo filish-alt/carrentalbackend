@@ -203,6 +203,32 @@ public function verifyPhoneOtp(Request $request)
     ]);
 }
 
+public function verifyEmailOtp(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email',
+        'otp'   => 'required|string|size:6',
+    ]);
+
+    $user = Users::where('email', $request->email)
+        ->where('otp', $request->otp)
+        ->where('otp_expires_at', '>', now())
+        ->first();
+
+    if (!$user) {
+        return response()->json(['message' => 'Invalid or expired OTP.'], 400);
+    }
+
+    $user->otp = null;
+    $user->otp_expires_at = null;
+    $user->save();
+
+    return response()->json([
+        'message' => 'Email verified successfully.',
+        'user' => $user,
+    ]);
+}
+
 
 
 public function login(Request $request)
