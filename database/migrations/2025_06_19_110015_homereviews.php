@@ -28,13 +28,6 @@ return new class extends Migration
     {
     Schema::dropIfExists('homereview');
     }
-    }
+    
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        //
-    }
 };
