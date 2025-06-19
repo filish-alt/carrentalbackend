@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Homereview;
-use App\Models\Homes;
+use App\Models\Home;
 
 
 class HomereviewController extends Controller
@@ -35,7 +35,7 @@ public function index()
 }
 
 //get review for specific home
-public function reviewsForHome(Homes $home)
+public function reviewsForHome(Home $home)
 {
     $reviews = Homereview::where('home_id', $home->id)
         ->with(['user', 'home'])

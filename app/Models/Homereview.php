@@ -15,6 +15,6 @@ class Homereview extends Model
 
     public function home()
     {
-        return $this->belongsTo(Home::class);
+        return $this->belongsTo(Homes::class);
     }
 }
