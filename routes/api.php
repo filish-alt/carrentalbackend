@@ -12,6 +12,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\LandingContentController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\HomeReviewController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\VerificationController;
@@ -39,13 +40,20 @@ Route::get('/auth/google', [SSOController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [SSOController::class, 'handleGoogleCallback']);
 Route::post('/auth/exchange-code', [SSOController::class, 'exchangeCode']);
 
+Route::get('/redirect/payment', [PaymentController::class, 'handleRedirect']);
+
 
 Route::post('/send-reset-code', [PasswordResetController::class, 'sendResetCode']);
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 Route::post('/send-verification-code', [PasswordResetController::class, 'forgotPassword']);
 Route::post('/verifyEmailOtp', [AuthController::class, 'verifyEmailOtp']);
 Route::post('/verify-2fa', [AuthController::class, 'verify2FA']);
+
 Route::get('/reviews', [ReviewController::class, 'index']);
+Route::get('/cars/{car}/reviews', [ReviewController::class, 'reviewsForCar']);
+
+Route::get('/home/reviews', [HomeReviewController::class, 'index']);
+Route::get('/home/{home}/reviews', [HomeReviewController::class, 'reviewsForHome']);
 
 Route::get('/chapa/callback', [PaymentController::class, 'handleCallback'])->name('api.chapa.callback');
 Route::get('/chapa/listing-callback', [PaymentController::class, 'listingCallback']);
@@ -74,7 +82,7 @@ Route::get('/cars/search', [CarController::class, 'search']);
 Route::get('cars', [CarController::class, 'index']); 
 Route::get('cars/{car}', [CarController::class, 'show']);
 Route::get('/cars/{car}/images', [CarController::class, 'getCarImages']);
-Route::get('/cars/{car}/reviews', [ReviewController::class, 'reviewsForCar']);
+
 
 // Homes routes in detail
 Route::get('/homes', [HomeController::class, 'index']);           // List all homes
@@ -119,6 +127,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::get('/my-reviews', [ReviewController::class, 'myReviews']);
     Route::get('/my-car-reviews', [ReviewController::class, 'reviewsForMyCars']);
+
+    Route::post('/home/reviews', [HomeReviewController::class, 'store']);
+    Route::get('/home/my-reviews', [HomeReviewController::class, 'myhomeReviews']);
+    Route::get('/home/my-home-reviews', [HomeReviewController::class, 'reviewsForMyHomes']);
+
+    
+    Route::post('/reviews', [ReviewController::class, 'store']);
+    Route::get('/my-reviews', [ReviewController::class, 'myReviews']);
+    Route::get('/my-home-reviews', [ReviewController::class, 'reviewsForMyCars']);
 
 
     // Route::get('/maintenance', [MaintenanceRecordController::class, 'index']);        

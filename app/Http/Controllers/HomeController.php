@@ -134,10 +134,10 @@ class HomeController extends Controller
     
         DB::commit();
         
-        $returnUrl = $request->header('Platform') === 'mobile'
-            ? env('Payment_MOBILE_RETURN_URL') . '?tx_ref=' . $tx_ref
+      $returnUrl = $request->header('Platform') === 'mobile'
+            ? url('/api/redirect/payment') . '?tx_ref=' . $tx_ref
             : env('Payment_FRONTEND_RETURN_URL') . '?tx_ref=' . $tx_ref;
-        
+
         $chapaData = [
             'amount' => $fee->fee,
             'currency' => 'ETB',

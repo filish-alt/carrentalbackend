@@ -71,5 +71,23 @@ public function listingCallback(Request $request)
     return response()->json(['error' => 'Payment verification failed'], 400);
 }
 
+public function handleRedirect(Request $request)
+    {
+        $txRef = $request->query('tx_ref');
+
+        if (!$txRef) {
+            return response('Invalid request', 400);
+        }
+
+        $payment = PlatformPayment::where('tx_ref', $txRef)->first();
+
+        if (!$payment) {
+            return response('Payment not found', 404);
+        }
+
+
+        // Redirect to your mobile app
+        return redirect()->away('myapp://platformpayment?tx_ref=' . $txRef);
+    }
 
 }

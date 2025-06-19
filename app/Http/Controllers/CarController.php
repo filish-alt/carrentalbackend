@@ -111,8 +111,9 @@ class CarController extends Controller
         DB::commit();
         
         $returnUrl = $request->header('Platform') === 'mobile'
-            ? env('Payment_MOBILE_RETURN_URL') . '?tx_ref=' . $tx_ref
-            : env('Payment_FRONTEND_RETURN_URL') . '?tx_ref=' . $tx_ref;
+        ? url('/api/redirect/payment') . '?tx_ref=' . $tx_ref
+        : env('Payment_FRONTEND_RETURN_URL') . '?tx_ref=' . $tx_ref;
+
         Log::info('Return URL', ['url' => $returnUrl]);
 
         
