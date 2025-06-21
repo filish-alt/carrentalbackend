@@ -146,17 +146,27 @@ public function updateProfilePicture(Request $request)
             'otp' => 'required',
         ]);
     
-        $storedOtp = Redis::get("2fa:{$request->user_id}");
+        // $storedOtp = Redis::get("2fa:{$request->user_id}");
     
-        if (!$storedOtp || $storedOtp !== $request->otp) {
-            return response()->json(['error' => 'Invalid or expired OTP'], 400);
-        }
+        // if (!$storedOtp || $storedOtp !== $request->otp) {
+        //     return response()->json(['error' => 'Invalid or expired OTP'], 400);
+        // }
     
-        $user = Users::find($request->user_id);
-        $token = $user->createToken('auth_token')->plainTextToken;
+        //Redis::del("2fa:{$request->user_id}");
     
-        Redis::del("2fa:{$request->user_id}");
-    
+            $user = Users::find($request->user_id);
+
+                    // Check if OTP matches and not expired
+            if (!$user->two_factor_code || $user->two_factor_code !== $request->otp || now()->greaterThan($user->two_factor_expires_at)) {
+                return response()->json(['error' => 'Invalid or expired OTP'], 400);
+            }
+
+            // Clear OTP fields after successful verification
+            $user->two_factor_code = null;
+            $user->two_factor_expires_at = null;
+            $user->save();
+     
+          $token = $user->createToken('auth_token')->plainTextToken;
         return response()->json([
             'message' => 'Two-factor verification successful',
             'token' => $token,
