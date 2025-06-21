@@ -238,7 +238,6 @@ public function login(Request $request)
         'password' => 'required|string',
     ]);
 
-    $user = Users::where('email', $request->email)->first();
     Log::info('=== Incoming Request ===');
     Log::info($request->all());
      $userType='';
@@ -247,8 +246,13 @@ public function login(Request $request)
                 $user = $admin;
                 $userType = 'admin';
             }
-
-        if (!$user) {
+     $admin = SuperAdmin::where('email', $request->email)->first();
+        if ($admin && Hash::check($request->password, $admin->hash_password)) {
+            $user = $admin;
+            $userType = 'admin';
+        }
+      
+        if (!$user) 
             $normalUser = Users::where('email', $request->email)->first();
             if ($normalUser && Hash::check($request->password, $normalUser->hash_password)) {
                 $user = $normalUser;
