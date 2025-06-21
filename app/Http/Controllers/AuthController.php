@@ -276,10 +276,16 @@ public function login(Request $request)
             $otp = rand(100000, 999999);
 
             // Save OTP temporarily in Redis
-            Redis::setex("2fa:{$user->id}", 300, $otp); // 5 minutes
-
-            // Send OTP via email and SMS
-            Mail::to($user->email)->send(new \App\Mail\TwoFactorCodeMail($otp));
+            //Redis::setex("2fa:{$user->id}", 300, $otp); // 5 minutes
+            $user->two_factor_code = $otp;
+            $user->two_factor_expires_at = now()->addMinutes(15);
+            $user->save();
+             // Send OTP via email and SMS
+          Mail::raw("Your two factor code is: $otp", function ($message) use ($user) {
+            $message->to($user->email)
+                    ->subject('Two factor Verification OTP');
+          });
+          
             $this->sendOtp($user->phone_number, $otp);
 
             Log::info("2FA code sent: {$otp}");
