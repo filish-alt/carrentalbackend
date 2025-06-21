@@ -240,62 +240,65 @@ public function login(Request $request)
 
     Log::info('=== Incoming Request ===');
     Log::info($request->all());
-     $userType='';
-     $user = null;
-  
-     $admin = SuperAdmin::where('email', $request->email)->first();
-        if ($admin && Hash::check($request->password, $admin->hash_password)) {
-                $user = $admin;
-                $userType = 'admin';
-            }
-    
-      
-        if (!$user) {
+
+    $user = null;
+    $userType = '';
+
+    // Check if SuperAdmin
+    $admin = SuperAdmin::where('email', $request->email)->first();
+    if ($admin && Hash::check($request->password, $admin->hash_password)) {
+        $user = $admin;
+        $userType = 'admin';
+    }
+
+    // Check if regular User (only if no admin match)
+    if (!$user) {
         $normalUser = Users::where('email', $request->email)->first();
-            if ($normalUser && Hash::check($request->password, $normalUser->hash_password)) {
-                $user = $normalUser;
-                $userType = 'user';
-            }
+        if ($normalUser && Hash::check($request->password, $normalUser->hash_password)) {
+            $user = $normalUser;
+            $userType = 'user';
         }
-        if (!$user) {
-            Log::warning('Invalid login credentials', ['email' => $request->email]);
-            return response()->json(['message' => 'Invalid credentials.'], 401);
-            
-        }
-   if ($userType === 'user') {
-    if ($user->otp && $user->otp_expires_at && now()->lessThan($user->otp_expires_at)) {
-        return response()->json(['message' => 'Phone number not verified. Please enter the OTP sent to your phone.'], 403);
     }
 
-    if ($user->two_factor_enabled) {
-        $otp = rand(100000, 999999);
-        $this->sendOtp($request->phone, $otp);
-        Redis::setex("2fa:{$user->id}", 300, $otp); // 5 mins expiry
-
-        // Send OTP via email
-        Mail::to($user->email)->send(new \App\Mail\TwoFactorCodeMail($otp));
-       
-        // Send via phone (SMS)
-        
-         $this->sendOtp($user->phone_number, $otp);
-         Log::info("your 2fa code {$otp}");
-
-        return response()->json([
-            'message' => 'Two-factor code sent',
-            'two_factor_pending' => true,
-            'user_id' => $user->id,
-        ]);
+    // No matching user or invalid password
+    if (!$user) {
+        Log::warning('Invalid login credentials', ['email' => $request->email]);
+        return response()->json(['message' => 'Invalid credentials.'], 401);
     }
-}
-    //Force logout: delete all old tokens before issuing a new one
-    //$user->tokens()->delete();
-       
-        // Check for existing active token 
-        //  $activeToken = $user->tokens()->first();
-        //  if ($activeToken) {
-        //     return $this->errorResponse('You are already logged in from another device. Please log out first to continue.', 
-        //                                 null, 403);
-        // }
+
+    // 2FA & OTP checks for normal users
+    if ($userType === 'user') {
+        if ($user->otp && $user->otp_expires_at && now()->lessThan($user->otp_expires_at)) {
+            return response()->json(['message' => 'Phone number not verified. Please enter the OTP sent to your phone.'], 403);
+        }
+
+        if ($user->two_factor_enabled) {
+            $otp = rand(100000, 999999);
+
+            // Save OTP temporarily in Redis
+            //Redis::setex("2fa:{$user->id}", 300, $otp); // 5 minutes
+            $user->two_factor_code = $otp;
+            $user->two_factor_expires_at = now()->addMinutes(15);
+            $user->save();
+             // Send OTP via email and SMS
+          Mail::raw("Your two factor code is: $otp", function ($message) use ($user) {
+            $message->to($user->email)
+                    ->subject('Two factor Verification OTP');
+          });
+          
+            $this->sendOtp($user->phone_number, $otp);
+
+            Log::info("2FA code sent: {$otp}");
+
+            return response()->json([
+                'message' => 'Two-factor code sent',
+                'two_factor_pending' => true,
+                'user_id' => $user->id,
+            ]);
+        }
+    }
+
+    // Issue new token
     $token = $user->createToken('auth_token')->plainTextToken;
 
     return response()->json([
@@ -305,6 +308,15 @@ public function login(Request $request)
         'token' => $token,
     ]);
 }
+   //Force logout: delete all old tokens before issuing a new one
+    //$user->tokens()->delete();
+       
+        // Check for existing active token 
+        //  $activeToken = $user->tokens()->first();
+        //  if ($activeToken) {
+        //     return $this->errorResponse('You are already logged in from another device. Please log out first to continue.', 
+        //                                 null, 403);
+        // }
 public function logout(Request $request)
 {
     $user = Auth::user();
