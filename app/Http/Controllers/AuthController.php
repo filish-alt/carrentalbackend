@@ -241,19 +241,17 @@ public function login(Request $request)
     Log::info('=== Incoming Request ===');
     Log::info($request->all());
      $userType='';
+     $user = null;
+  
      $admin = SuperAdmin::where('email', $request->email)->first();
         if ($admin && Hash::check($request->password, $admin->hash_password)) {
                 $user = $admin;
                 $userType = 'admin';
             }
-     $admin = SuperAdmin::where('email', $request->email)->first();
-        if ($admin && Hash::check($request->password, $admin->hash_password)) {
-            $user = $admin;
-            $userType = 'admin';
-        }
+    
       
-        if (!$user) 
-            $normalUser = Users::where('email', $request->email)->first();
+        if (!$user) {
+        $normalUser = Users::where('email', $request->email)->first();
             if ($normalUser && Hash::check($request->password, $normalUser->hash_password)) {
                 $user = $normalUser;
                 $userType = 'user';
