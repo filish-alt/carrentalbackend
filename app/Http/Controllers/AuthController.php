@@ -252,13 +252,13 @@ public function login(Request $request)
     }
 
     // Check if regular User (only if no admin match)
-    if (!$user) {
+    
         $normalUser = Users::where('email', $request->email)->first();
         if ($normalUser && Hash::check($request->password, $normalUser->hash_password)) {
             $user = $normalUser;
             $userType = 'user';
         }
-    }
+    
 
     // No matching user or invalid password
     if (!$user) {
