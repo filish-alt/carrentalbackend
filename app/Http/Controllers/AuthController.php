@@ -238,10 +238,10 @@ public function login(Request $request)
         'password' => 'required|string',
     ]);
 
-    $user = Users::where('email', $request->email)->first();
     Log::info('=== Incoming Request ===');
     Log::info($request->all());
      $userType='';
+      $user = null;
      $admin = SuperAdmin::where('email', $request->email)->first();
         if ($admin && Hash::check($request->password, $admin->hash_password)) {
                 $user = $admin;
