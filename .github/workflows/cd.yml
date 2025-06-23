@@ -1,228 +1,36 @@
-name: Laravel CD
+name: Laravel CI
 
 on:
   push:
-    branches: [ "main", "develop" ]
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - production
+    branches: [main, develop]
+  pull_request:
 
 jobs:
-  deploy:
+  laravel:
     runs-on: ubuntu-latest
-    
-    environment: 
-      name: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'staging') }}
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
+
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.2'
-        extensions: mbstring, pdo, pdo_pgsql, redis, zip, exif, pcntl, gd
+        extensions: mbstring, pdo, pdo_mysql, tokenizer, xml
         tools: composer:v2
-    
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.composer/cache
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
-    
+
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-dev --optimize-autoloader
-    
-    - name: Set deployment environment
-      id: env-vars
-      run: |
-        # Determine environment type based on branch or manual input
-        ENV_TYPE="${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'staging') }}"
-        echo "ENV_TYPE=$ENV_TYPE" >> $GITHUB_ENV
-        
-        # Set environment-specific values
-        if [ "$ENV_TYPE" = "production" ]; then
-          echo "APP_DEBUG=false" >> $GITHUB_ENV
-          echo "LOG_LEVEL=warning" >> $GITHUB_ENV
-        else
-          echo "APP_DEBUG=true" >> $GITHUB_ENV
-          echo "LOG_LEVEL=debug" >> $GITHUB_ENV
-        fi
-    
-    - name: Generate .env file from secrets
-      run: |
-        # Basic application configuration
-        echo "APP_NAME=${{ secrets.APP_NAME }}" > .env
-        echo "APP_ENV=${{ env.ENV_TYPE }}" >> .env
-        echo "APP_ENVIRONMENT=${{ env.ENV_TYPE }}" >> .env
-        echo "APP_KEY=${{ secrets.APP_KEY }}" >> .env
-        echo "APP_DEBUG=${{ env.APP_DEBUG }}" >> .env
-        echo "APP_URL=${{ vars.APP_URL }}" >> .env
-        
-        # Logging configuration
-        echo "LOG_CHANNEL=stack" >> .env
-        echo "LOG_LEVEL=${{ env.LOG_LEVEL }}" >> .env
-        
-        # Database configuration
-        echo "DB_CONNECTION=pgsql" >> .env
-        echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
-        echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-        echo "DB_DATABASE=${{ secrets.DB_DATABASE }}" >> .env
-        echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
-        echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-        
-        # Redis configuration
-        echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
-        echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
-        echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
-        echo "REDIS_CLIENT=predis" >> .env
-        
-        # Cache, session and queue drivers for production
-        echo "CACHE_DRIVER=redis" >> .env
-        echo "SESSION_DRIVER=redis" >> .env
-        echo "QUEUE_CONNECTION=redis" >> .env
-        
-        # Mail configuration
-        echo "MAIL_MAILER=${{ secrets.MAIL_MAILER }}" >> .env
-        echo "MAIL_HOST=${{ secrets.MAIL_HOST }}" >> .env
-        echo "MAIL_PORT=${{ secrets.MAIL_PORT }}" >> .env
-        echo "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" >> .env
-        echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> .env
-        echo "MAIL_ENCRYPTION=${{ secrets.MAIL_ENCRYPTION }}" >> .env
-        echo "MAIL_FROM_ADDRESS=${{ secrets.MAIL_FROM_ADDRESS }}" >> .env
-        echo "MAIL_FROM_NAME=\"${{ secrets.APP_NAME }}\"" >> .env
-        
-        # Other application settings
-        if [ -n "${{ secrets.SENTRY_DSN }}" ]; then
-          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
-          echo "SENTRY_TRACES_SAMPLE_RATE=${{ secrets.SENTRY_TRACES_SAMPLE_RATE || '0.1' }}" >> .env
-        fi
-    
-    - name: Create deployment archive
-      run: |
-        mkdir -p deployment
-        tar -czf deployment/release.tar.gz --exclude=deployment --exclude=.git --exclude=node_modules .
-    
-    - name: Deploy to server
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        script_stop: true
-        script: |
-          # Set deployment variables
-          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
-          RELEASE_DIR="releases/$(date +%Y%m%d%H%M%S)"
-          FULL_RELEASE_PATH="$DEPLOY_PATH/$RELEASE_DIR"
-          CURRENT_LINK="$DEPLOY_PATH/current"
-          STORAGE_PATH="$DEPLOY_PATH/storage"
-          ENV_FILE="$DEPLOY_PATH/.env"
-          
-          # Create release directory
-          mkdir -p "$FULL_RELEASE_PATH"
-          
-          # Create shared directories if they don't exist
-          mkdir -p "$STORAGE_PATH/app/public"
-          mkdir -p "$STORAGE_PATH/framework/cache"
-          mkdir -p "$STORAGE_PATH/framework/sessions"
-          mkdir -p "$STORAGE_PATH/framework/views"
-          mkdir -p "$STORAGE_PATH/logs"
-          
-          echo "Created release directory: $FULL_RELEASE_PATH"
-    
-    - name: Copy release to server
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        source: "deployment/release.tar.gz"
-        target: "${{ secrets.DEPLOY_PATH }}/releases/"
-    
-    - name: Finalize deployment
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        script_stop: true
-        script: |
-          # Set deployment variables
-          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
-          RELEASE_DIR="releases/$(date +%Y%m%d%H%M%S)"
-          FULL_RELEASE_PATH="$DEPLOY_PATH/$RELEASE_DIR"
-          CURRENT_LINK="$DEPLOY_PATH/current"
-          STORAGE_PATH="$DEPLOY_PATH/storage"
-          ENV_FILE="$DEPLOY_PATH/.env"
-          DEPLOY_ENV="${{ env.ENV_TYPE }}"
-          
-          echo "Starting deployment for environment: $DEPLOY_ENV"
-          
-          # Extract the release
-          tar -xzf "$DEPLOY_PATH/releases/deployment/release.tar.gz" -C "$FULL_RELEASE_PATH"
-          rm -rf "$DEPLOY_PATH/releases/deployment"
-          
-          # Create symlinks to shared resources
-          ln -sf "$ENV_FILE" "$FULL_RELEASE_PATH/.env"
-          rm -rf "$FULL_RELEASE_PATH/storage"
-          ln -sf "$STORAGE_PATH" "$FULL_RELEASE_PATH/storage"
-          
-          # Create bootstrap/cache directory if it doesn't exist
-          mkdir -p "$FULL_RELEASE_PATH/bootstrap/cache"
-          chmod -R 775 "$FULL_RELEASE_PATH/bootstrap/cache"
-          
-          # Ensure proper permissions
-          find "$FULL_RELEASE_PATH" -type f -exec chmod 644 {} \;
-          find "$FULL_RELEASE_PATH" -type d -exec chmod 755 {} \;
-          
-          # Optimize Laravel
-          cd "$FULL_RELEASE_PATH"
-          echo "Running database migrations..."
-          php artisan migrate --force
-          
-          echo "Clearing and rebuilding cache..."
-          php artisan optimize:clear
-          
-          # Only cache in production, not in staging
-          if [ "$DEPLOY_ENV" = "production" ]; then
-            echo "Building production cache..."
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-          else
-            echo "Skipping cache building for non-production environment..."
-          fi
-          
-          echo "Restarting queue workers..."
-          php artisan queue:restart
-          
-          # Activate new release (zero downtime)
-          echo "Activating new release..."
-          ln -sfn "$FULL_RELEASE_PATH" "$CURRENT_LINK.new"
-          mv -Tf "$CURRENT_LINK.new" "$CURRENT_LINK"
-          
-          # Cleanup old releases (keep last 5)
-          echo "Cleaning up old releases..."
-          cd "$DEPLOY_PATH/releases"
-          ls -1dt */ | tail -n +6 | xargs -I {} rm -rf {}
-          
-          echo "Deployment to $DEPLOY_ENV completed successfully!"
-    
-   
+      run: composer install --no-progress --no-suggest
+
+    - name: Copy .env.example to .env
+      run: cp .env.example .env
+
+    - name: Generate app key
+      run: php artisan key:generate
+
+    - name: Run Laravel config cache
+      run: php artisan config:cache
+
+    - name: Success message
+      run: echo "🎉 Laravel CI completed successfully!"
