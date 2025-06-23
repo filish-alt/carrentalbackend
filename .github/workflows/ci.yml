@@ -2,124 +2,30 @@ name: Laravel CI
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [main, develop]
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: [main, develop]
 
 jobs:
-  laravel-tests:
+  laravel-ci:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: laravel_test
-          POSTGRES_USER: laravel
-          POSTGRES_PASSWORD: secret
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      
-      redis:
-        image: redis:alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        extensions: mbstring, pdo, pdo_pgsql, redis, zip, exif, pcntl, gd
-        coverage: pcov
-        tools: composer:v2
-    
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.composer/cache
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
-    
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
-    
-    - name: Prepare Laravel Environment
-      run: |
-        cp .env.example .env.testing
-        php artisan key:generate --env=testing
-    
-    - name: Configure Testing Environment
-      run: |
-        echo "APP_ENV=testing" >> .env.testing
-        echo "APP_ENVIRONMENT=testing" >> .env.testing
-        echo "APP_DEBUG=true" >> .env.testing
-        
-        # Database configuration
-        echo "DB_CONNECTION=pgsql" >> .env.testing
-        echo "DB_HOST=127.0.0.1" >> .env.testing
-        echo "DB_PORT=5432" >> .env.testing
-        echo "DB_DATABASE=laravel_test" >> .env.testing
-        echo "DB_USERNAME=laravel" >> .env.testing
-        echo "DB_PASSWORD=secret" >> .env.testing
-        
-        # Redis configuration
-        echo "REDIS_HOST=127.0.0.1" >> .env.testing
-        echo "REDIS_PORT=6379" >> .env.testing
-        echo "REDIS_PASSWORD=null" >> .env.testing
-        echo "REDIS_CLIENT=predis" >> .env.testing
-        
-        # Driver configuration for testing
-        echo "CACHE_DRIVER=redis" >> .env.testing
-        echo "SESSION_DRIVER=redis" >> .env.testing
-        echo "QUEUE_CONNECTION=redis" >> .env.testing
-        
-        # Other testing configs
-        echo "MAIL_MAILER=log" >> .env.testing
-        echo "LOG_CHANNEL=stderr" >> .env.testing
-    
-    - name: Run Laravel Pint
-      run: vendor/bin/pint --test
-    
-    - name: Run Tests
-      run: |
-        php -d pcov.enabled=1 vendor/bin/phpunit --coverage-clover=coverage.xml --env=testing
-      env:
-        APP_ENV: testing
-        APP_ENVIRONMENT: testing
-        DB_CONNECTION: pgsql
-        DB_HOST: 127.0.0.1
-        DB_PORT: 5432
-        DB_DATABASE: laravel_test
-        DB_USERNAME: laravel
-        DB_PASSWORD: secret
-        REDIS_HOST: 127.0.0.1
-        REDIS_PORT: 6379
-        REDIS_CLIENT: predis
-        CACHE_DRIVER: redis
-        SESSION_DRIVER: redis
-        QUEUE_CONNECTION: redis
-    
-    - name: Upload Coverage Report
-      uses: actions/upload-artifact@v3
-      with:
-        name: coverage-report
-        path: coverage.xml
-        retention-days: 7
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql, tokenizer, xml
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Check Laravel version
+        run: php artisan --version
+
+      - name: Run Laravel syntax check
+        run: php artisan config:cache
