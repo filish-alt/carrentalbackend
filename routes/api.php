@@ -34,7 +34,7 @@ use Illuminate\Http\Request;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/verify-phone-otp', [AuthController::class, 'verifyPhoneOtp']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');;
 
 Route::get('/auth/google', [SSOController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [SSOController::class, 'handleGoogleCallback']);
@@ -42,7 +42,7 @@ Route::post('/auth/exchange-code', [SSOController::class, 'exchangeCode']);
 
 Route::get('/redirect/payment', [PaymentController::class, 'handleRedirect']);
 
-
+Route::get('/users/{id}', [UserController::class, 'getUserById']);
 Route::post('/send-reset-code', [PasswordResetController::class, 'sendResetCode']);
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 Route::post('/send-verification-code', [PasswordResetController::class, 'forgotPassword']);
@@ -160,7 +160,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/users', [UserController::class, 'getAllUsers']);
-    Route::get('/users/{id}', [UserController::class, 'getUserById']);
     Route::put('/users/{id}', [UserController::class, 'updateUser']);
     Route::patch('/users/{id}/ban', [UserController::class, 'banUser']);     // Ban a user
     Route::patch('/users/{id}/unban', [UserController::class, 'unbanUser']); // Unban a user

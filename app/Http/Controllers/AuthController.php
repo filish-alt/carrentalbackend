@@ -139,7 +139,7 @@ class AuthController extends Controller
         'address'         => $request->address,
         'city'            => $request->city,
         'birth_Date'      => $request->birth_date,
-        'role'            => $request->role,
+        'role'            => 'User',
         'status'          => 'Pending',
         'otp'             => $otp,
         'otp_expires_at'  => now()->addMinutes(5),

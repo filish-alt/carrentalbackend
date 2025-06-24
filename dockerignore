@@ -1,0 +1,7 @@
+# .dockerignore
+node_modules
+vendor
+.git
+.env
+storage/*
+!.env.example

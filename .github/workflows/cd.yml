@@ -55,10 +55,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 📥 Checkout code
+    - name:  Checkout code
       uses: actions/checkout@v4
 
-    - name: ⚙️ Setup PHP & Composer
+    - name:  Setup PHP & Composer
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.2'
@@ -68,18 +68,18 @@ jobs:
     - name:  Install Laravel dependencies
       run: composer install --prefer-dist --no-progress --no-dev
 
-    - name: 🧪 Validate Laravel setup
+    - name: Validate Laravel setup
       run: |
         cp .env.example .env
         php artisan key:generate
         php artisan config:cache
 
-    - name: 📦 Package codebase
+    - name:  Package codebase
       run: |
         mkdir -p deployment
         tar -czf deployment/release.tar.gz --exclude=deployment --exclude=.git --exclude=node_modules .
 
-    - name: 🚀 Upload release to server
+    - name: Upload release to server
       uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.SSH_HOST }}
@@ -103,7 +103,7 @@ jobs:
           tar -xzf release.tar.gz -C current
           cd current
 
-          echo "📄 Writing .env file"
+          echo " Writing .env file"
           cat <<EOT > .env
           APP_NAME=${{ secrets.APP_NAME }}
           APP_ENV=production
@@ -119,14 +119,14 @@ jobs:
           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
           EOT
 
-            echo "🔐 Setting permissions"
+            echo " Setting permissions"
             chmod -R 755 .
             chmod -R 775 storage bootstrap/cache
 
-            echo "🧰 Running Laravel setup"
+            echo "Running Laravel setup"
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
 
-            echo "✅ Laravel deployed successfully!"
+            echo "Laravel deployed successfully!"
