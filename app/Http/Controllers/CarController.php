@@ -67,7 +67,7 @@ class CarController extends Controller
                 'vin' => $request->vin,
                 'seating_capacity' => $request->seating_capacity,
                 'license_plate' => $request->license_plate,
-                'status' =>'pending',
+                'status' =>'payment_pending',
                 'price_per_day' => $request->price_per_day,
                 'fuel_type' => $request->fuel_type,
                 'transmission' => $request->transmission,
