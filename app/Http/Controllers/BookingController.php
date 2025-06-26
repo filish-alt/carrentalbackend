@@ -16,6 +16,7 @@ class BookingController extends Controller
       // Store a new booking
     public function store(Request $request)
       {
+        $user = Auth::user();
         $data = $request->validate([
             'car_id' => 'required|exists:cars,id',
             'pickup_date' => 'required|date|after_or_equal:today',

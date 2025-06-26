@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 
 
 
@@ -24,6 +25,13 @@ class CarController extends Controller
 
     public function store(Request $request)
     {
+        $user = Auth::user();
+        if (Auth::check()) {
+            logger('User ID for auditing: ' . Auth::id());
+        } else {
+            logger('No authenticated user found for auditing.');
+        }
+
         $request->validate([
             'owner_id' => 'required|integer',
             'make'  =>  'required|string',
@@ -59,7 +67,7 @@ class CarController extends Controller
                 'vin' => $request->vin,
                 'seating_capacity' => $request->seating_capacity,
                 'license_plate' => $request->license_plate,
-                'status' =>'pending_payment',
+                'status' =>'pending',
                 'price_per_day' => $request->price_per_day,
                 'fuel_type' => $request->fuel_type,
                 'transmission' => $request->transmission,
@@ -161,6 +169,7 @@ class CarController extends Controller
 
     public function update(Request $request, $id)
     {
+        $user = Auth::user();
         $car = Car::findOrFail($id);
 
         $request->validate([

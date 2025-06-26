@@ -26,6 +26,7 @@ use App\Http\Controllers\ListingFeeController;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AuditController;
 use Illuminate\Http\Request;
 
 
@@ -111,6 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('homes/{id}/approve', [HomeController::class, 'approveHome']);
         Route::post('homes/{id}/reject', [HomeController::class, 'rejectHome']);
         Route::post('homes/{id}/block', [HomeController::class, 'blockHome']);
+        Route::get('admin/audits', [AuditController::class, 'index']); 
     });
   
 

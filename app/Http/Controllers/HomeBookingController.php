@@ -16,6 +16,7 @@ class HomeBookingController extends Controller
     // Store a new home booking (Rent or Buy)
     public function store(Request $request)
     {
+        $user = Auth::user();
         $data = $request->validate([
             'home_id' => 'required|exists:homes,id',
             'booking_type' => 'required|in:rent,buy',
@@ -95,34 +96,39 @@ class HomeBookingController extends Controller
             'guests' => $booking->guests,
         ]);
 
-        // // Prepare Chapa payment data
-        // $chapaData = [
-        //     'amount' => $booking->total_price,
-        //     'currency' => 'ETB',
-        //     'email' => auth()->user()->email,
-        //     'first_name' => auth()->user()->first_name,
-        //     'phone_number' => auth()->user()->phone,
-        //     'tx_ref' => $tx_ref,
-        //     'callback_url' => url('/api/chapa/callback'),
-        //     'customization' => [
-        //         'title' => 'Home Booking Payment',
-        //         'description' => 'Payment for home ' . $data['booking_type'],
-        //     ],
-        // ];
+        // Prepare Chapa payment data
+          $returnUrl = $request->header('Platform') === 'mobile'
+            ? env('MOBILE_RETURN_URL') . '?tx_ref=' . $tx_ref
+            : env('FRONTEND_RETURN_URL') . '?tx_ref=' . $tx_ref;
+          Log::info($returnUrl);
+        $chapaData = [
+            'amount' => $booking->total_price,
+            'currency' => 'ETB',
+            'email' => auth()->user()->email,
+            'first_name' => auth()->user()->first_name,
+            'phone_number' => auth()->user()->phone,
+            'tx_ref' => $tx_ref,
+            'callback_url' => url('/api/chapa/callback'),
+            'return_url' => $returnUrl,
+            'customization' => [
+                'title' => 'Home Booking Payment',
+                'description' => 'Payment for home ' . $data['booking_type'],
+            ],
+        ];
 
-        // Log::info('Chapa Request', $chapaData);
+        Log::info('Chapa Request', $chapaData);
 
-        // $response = Http::withToken(env('CHAPA_SECRET_KEY'))
-        //     ->post(env('CHAPA_BASE_URL') . '/transaction/initialize', $chapaData);
+        $response = Http::withToken(env('CHAPA_SECRET_KEY'))
+            ->post(env('CHAPA_BASE_URL') . '/transaction/initialize', $chapaData);
 
-        // $responseData = $response->json();
+        $responseData = $response->json();
 
-        // if ($response->successful() && isset($responseData['data']['checkout_url'])) {
-        //     return response()->json([
-        //         'message' => 'Booking created. Redirect to Chapa.',
-        //         'checkout_url' => $responseData['data']['checkout_url'],
-        //     ]);
-        // }
+        if ($response->successful() && isset($responseData['data']['checkout_url'])) {
+            return response()->json([
+                'message' => 'Booking created. Redirect to Chapa.',
+                'checkout_url' => $responseData['data']['checkout_url'],
+            ]);
+        }
 
     return response()->json([
         'message' => 'Booking created successfully. Proceed to payment.',
@@ -152,6 +158,7 @@ class HomeBookingController extends Controller
     // Cancel a pending home booking
     public function cancel($id)
     {
+        $user = Auth::user();
         $booking = HomeBooking::findOrFail($id);
 
         if ($booking->user_id !== Auth::id()) {
@@ -195,6 +202,7 @@ class HomeBookingController extends Controller
     // ADMIN: Cancel booking
     public function adminCancel($id)
     {
+        $user = Auth::user();
         $booking = HomeBooking::find($id);
 
         if (!$booking) {

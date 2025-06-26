@@ -7,13 +7,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+use OwenIt\Auditing\Auditable;
 
 
-
-class HomeBooking extends Model
+class HomeBooking extends Model implements AuditableContract
 {
     use HasFactory;
-
+    use Auditable;
     protected $fillable = [
         'user_id',
         'home_id',

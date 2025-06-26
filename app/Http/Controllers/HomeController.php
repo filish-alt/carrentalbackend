@@ -12,16 +12,24 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
+    
     public function index()
     {
         return Home::with('images')->get();
     }
 
     public function store(Request $request)
-    {
+    { 
+        $user = Auth::user();
+        if (Auth::check()) {
+            logger('User ID for auditing: ' . Auth::id());
+        } else {
+            logger('No authenticated user found for auditing.');
+        }
         $request->validate([
             'owner_id' => 'required|integer|exists:users,id',
             'title' => 'required|string',
@@ -181,6 +189,7 @@ class HomeController extends Controller
 
     public function update(Request $request, $id)
     {
+        $user = Auth::user();
         $request->validate([
             'title' => 'sometimes|string',
             'description' => 'nullable|string',
@@ -226,6 +235,7 @@ class HomeController extends Controller
 
     public function destroy($id)
     {
+        $user = Auth::user();
         Home::destroy($id);
         return response()->noContent();
     }
