@@ -47,7 +47,7 @@ Route::post('/send-reset-code', [PasswordResetController::class, 'sendResetCode'
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 Route::post('/send-verification-code', [PasswordResetController::class, 'forgotPassword']);
 Route::post('/verifyEmailOtp', [AuthController::class, 'verifyEmailOtp']);
-Route::post('/verify-2fa', [AuthController::class, 'verify2FA']);
+Route::post('/verify-2fa', [UserController::class, 'verify2FA']);
 
 Route::get('/reviews', [ReviewController::class, 'index']);
 Route::get('/cars/{car}/reviews', [ReviewController::class, 'reviewsForCar']);

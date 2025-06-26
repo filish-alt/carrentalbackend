@@ -37,7 +37,7 @@ class AuthController extends Controller
             $response = Http::asForm()->post('https://api.geezsms.com/api/v1/sms/send', [
                 'token' => 'iE0L4t06lOKr3u2AmzFQ3d4nXe2DZpeC',
                 'phone' => $phone,
-                'msg'   => "Dear user, your OTP is: {$otp}. Use this code to complete your registration. It will expire in 5 minutes. Thank you!",
+                'msg'   => "Dear user, your OTP is: {$otp}",
             ]);
     
             Log::info("SMS API Response:", ['response' => $response->json()]);
@@ -155,6 +155,7 @@ class AuthController extends Controller
     
     // Simulate sending OTP 
     Log::info("OTP for {$user->phone}: {$otp}");
+    
     return response()->json([
         'message' => 'User registered successfully.',
         'user' => [
@@ -286,8 +287,8 @@ public function login(Request $request)
                     ->subject('Two factor Verification OTP');
           });
           
-            $this->sendOtp($user->phone_number, $otp);
-
+            $this->sendOtp($user->phone, $otp);
+       
             Log::info("2FA code sent: {$otp}");
 
             return response()->json([
