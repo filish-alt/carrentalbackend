@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\Users;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+
 
 class PasswordResetController extends Controller
 {
@@ -22,13 +24,16 @@ class PasswordResetController extends Controller
                     ->orWhere('phone', $identifier)
                     ->first();
 
-        if (! $user) {
+        if (!$user) {
             return response()->json(['error' => 'User not found'], 404);
         }
 
         //$token = Str::random(64);
         $code = rand(100000, 999999);
-        Redis::setex('password_reset:' . $request->identifier, 3600, $code);
+        $user->otp = $code;
+        $user->otp_expires_at = now()->addMinutes(10);
+        $user->save();
+        //Redis::setex('password_reset:' . $request->identifier, 3600, $code);
        
       //  $resetLink = url('/api/reset-password?token=' . $token . '&identifier=' . $identifier);
     
@@ -36,7 +41,7 @@ class PasswordResetController extends Controller
             Log::info("OTP for {$user->email}: {$code}");
             Mail::to($user->email)->send(new \App\Mail\TwoFactorCodeMail($code));
         } else {
-            $this->sendOtp($user->phone_number, $code);
+            $this->sendOtp($identifier, $code);
             Log::info("OTP for {$user->phone_number}: {$code}");
             
         }
