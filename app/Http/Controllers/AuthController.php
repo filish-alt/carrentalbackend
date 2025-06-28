@@ -37,7 +37,7 @@ class AuthController extends Controller
             $response = Http::asForm()->post('https://api.geezsms.com/api/v1/sms/send', [
                 'token' => 'iE0L4t06lOKr3u2AmzFQ3d4nXe2DZpeC',
                 'phone' => $phone,
-                'msg'   => "Dear user, your OTP is: {$otp}",
+                'msg'   => "Dear user, your OTP is: {$otp} It will expire in 5 minutes. Thank you!",
             ]);
     
             Log::info("SMS API Response:", ['response' => $response->json()]);
@@ -279,7 +279,7 @@ public function login(Request $request)
             // Save OTP temporarily in Redis
             //Redis::setex("2fa:{$user->id}", 300, $otp); // 5 minutes
             $user->two_factor_code = $otp;
-            $user->two_factor_expires_at = now()->addMinutes(15);
+            $user->two_factor_expires_at = now()->addMinutes(5);
             $user->save();
              // Send OTP via email and SMS
           Mail::raw("Your two factor code is: $otp", function ($message) use ($user) {

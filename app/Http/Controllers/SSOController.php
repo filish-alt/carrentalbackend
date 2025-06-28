@@ -46,7 +46,7 @@ class SSOController extends Controller
                     'email' => $googleUser->getEmail(),
                     'hash_password' => Hash::make(Str::random(16)),
                     'phone' => '',
-                    'role' => 'user',
+                    'role' => 'User',
                     'digital_id' => '',
                     'driver_liscence' => '',
                     'sso_id' => $googleUser->getId()
