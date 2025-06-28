@@ -47,6 +47,7 @@ Route::get('/redirect/booking-payment', [PaymentController::class, 'handleRedire
 Route::get('/users/{id}', [UserController::class, 'getUserById']);
 Route::post('/resendOtp', [PasswordResetController::class, 'resendOtp']);
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+Route::post('/resendOtpPhone', [PasswordResetController::class, 'resendOtpWithIdentifier']);
 Route::post('/send-verification-code', [PasswordResetController::class, 'forgotPassword']);
 Route::post('/verifyEmailOtp', [AuthController::class, 'verifyEmailOtp']);
 Route::post('/verify-2fa', [UserController::class, 'verify2FA']);

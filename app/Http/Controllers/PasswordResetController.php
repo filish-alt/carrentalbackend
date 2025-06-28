@@ -55,6 +55,39 @@ class PasswordResetController extends Controller
             return response()->json(['message' => 'OTP resent successfully.']);
      }
 
+    public function resendOtpWithIdentifier(Request $request)
+        {
+            $request->validate([
+                'phone' => 'required',
+            ]);
+
+            $user = Users::where('phone', $request->phone)->first();
+            Log::info("OTP for {$request->phone}");
+            if (!$user) {
+                return response()->json(['error' => 'User not found.'], 404);
+            }
+
+            // Check if previous OTP is still active
+            if ($user->otp && $user->otp_expires_at && now()->lt($user->otp_expires_at)) {
+                return response()->json([
+                    'message' => 'You already have a valid OTP. Please wait until it expires before resending.',
+                    'expires_at' => $user->otp_expires_at->diffForHumans(),
+                ], 429);
+            }
+
+            // Generate new OTP
+            $otp = rand(100000, 999999);
+            $user->otp = $otp;
+            $user->otp_expires_at = now()->addMinutes(5);
+            $user->save();
+            
+
+            Log::info("OTP for {$user->phone}: {$otp}");
+             $this->sendOtp($user->phone, $otp);
+
+            // Log / Send to phone
+            return response()->json(['message' => 'OTP resent successfully.']);
+     }
    public function forgotPassword(Request $request)
     {
 
@@ -82,8 +115,8 @@ class PasswordResetController extends Controller
                     ->subject('Reset Code');
         });
         } else {
-            $this->sendOtp($identifier, $code);
-            Log::info("OTP for {$user->phone_number}: {$code}");
+            $this->sendOtp($user->phone, $code);
+            Log::info("OTP for {$user->phone}: {$code}");
             
         }
 
@@ -168,8 +201,9 @@ public function sendOtp($phone, $otp){
             'phone' => $phone,
             'msg'   => "Dear user, your Code is: {$otp}. It will expire in 5 minutes. Thank you!",
         ]);
-
-        if ($response->failed()) {
+       $apiResponse = $response->json();
+       Log::info("SMS API Response:", ['response' => $response->json()]);
+        if ($response->failed() || (isset($apiResponse['error']) && $apiResponse['error'])) {
             Log::error('Failed to send OTP via SMS', ['response' => $response->body()]);
             return response()->json(['message' => 'Failed to send OTP. Please try again later.'], 500);
         }

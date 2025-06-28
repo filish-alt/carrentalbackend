@@ -42,15 +42,16 @@ class AuthController extends Controller
     
             Log::info("SMS API Response:", ['response' => $response->json()]);
     
-            if ($response->failed()) {
+            $apiResponse = $response->json();
+            if ($response->failed() || (isset($apiResponse['error']) && $apiResponse['error'])) { 
                 Log::error('Failed to send OTP via SMS', [
                     'status' => $response->status(),
-                    'response' => $response->body()
+                    'response' => $apiResponse
                 ]);
                 return [
                     'success' => false,
                     'message' => 'Failed to send OTP. Please try again later.',
-                    'api_response' => $response->json()
+                    'api_response' => $apiResponse
                 ];
             }
     
@@ -58,7 +59,7 @@ class AuthController extends Controller
             return [
                 'success' => true,
                 'message' => 'OTP sent successfully',
-                'api_response' => $response->json()
+                'api_response' => $apiResponse
             ];
     
         } catch (\Exception $e) {
@@ -269,7 +270,7 @@ public function login(Request $request)
 
     // 2FA & OTP checks for normal users
     if ($userType === 'user') {
-        if ($user->otp && $user->otp_expires_at && now()->lessThan($user->otp_expires_at)) {
+        if ($user->otp && $user->otp_expires_at) {
             return response()->json(['message' => 'Phone number not verified. Please enter the OTP sent to your phone.'], 403);
         }
 

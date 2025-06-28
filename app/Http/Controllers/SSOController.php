@@ -16,11 +16,11 @@ class SSOController extends Controller
 
      public function redirectToGoogle(Request $request)
         {
-            $platform = $request->query('platform'); // get 'mobile' or 'web'
+            $platform = $request->query('platform'); 
 
             $redirectUrl = Socialite::driver('google')
                 ->stateless()
-                ->with(['state' => $platform]) // pass platform in state param
+                ->with(['state' => $platform]) 
                 ->redirect()
                 ->getTargetUrl();
 
