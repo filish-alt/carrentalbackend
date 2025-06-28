@@ -90,4 +90,26 @@ public function handleRedirect(Request $request)
         return redirect()->away('myapp://platformpayment?tx_ref=' . $txRef);
     }
 
+    public function handleRedirectForBooking(Request $request)
+    {
+        $txRef = $request->query('tx_ref');
+
+        if (!$txRef) {
+            return response('Invalid request', 400);
+        }
+
+        $payment = Payment::where('tx_ref', $txRef)->first();
+
+        if (!$payment) {
+            return response('Payment not found', 404);
+        }
+
+
+        // Redirect to your mobile app
+        return redirect()->away('myapp://payment-return?tx_ref=' . $txRef);
+    }
+
+
+
 }
+

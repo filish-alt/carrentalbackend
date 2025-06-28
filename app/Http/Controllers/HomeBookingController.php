@@ -97,8 +97,8 @@ class HomeBookingController extends Controller
         ]);
 
         // Prepare Chapa payment data
-          $returnUrl = $request->header('Platform') === 'mobile'
-            ? env('MOBILE_RETURN_URL') . '?tx_ref=' . $tx_ref
+        $returnUrl = $request->header('Platform') === 'mobile'
+            ? url('/api/redirect/booking-payment') . '?tx_ref=' . $tx_ref
             : env('FRONTEND_RETURN_URL') . '?tx_ref=' . $tx_ref;
           Log::info($returnUrl);
         $chapaData = [

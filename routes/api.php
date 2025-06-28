@@ -42,9 +42,10 @@ Route::get('/auth/google/callback', [SSOController::class, 'handleGoogleCallback
 Route::post('/auth/exchange-code', [SSOController::class, 'exchangeCode']);
 
 Route::get('/redirect/payment', [PaymentController::class, 'handleRedirect']);
+Route::get('/redirect/booking-payment', [PaymentController::class, 'handleRedirectForBooking']);
 
 Route::get('/users/{id}', [UserController::class, 'getUserById']);
-Route::post('/send-reset-code', [PasswordResetController::class, 'sendResetCode']);
+Route::post('/resendOtp', [PasswordResetController::class, 'resendOtp']);
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 Route::post('/send-verification-code', [PasswordResetController::class, 'forgotPassword']);
 Route::post('/verifyEmailOtp', [AuthController::class, 'verifyEmailOtp']);

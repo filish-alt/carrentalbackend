@@ -1,132 +1,95 @@
-name: Laravel CI
+name: Laravel CD
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
 
 jobs:
-  laravel:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name:  Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup PHP
+    - name:  Setup PHP & Composer
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.2'
         extensions: mbstring, pdo, pdo_mysql, tokenizer, xml
         tools: composer:v2
 
-    - name: Install dependencies
-      run: composer install --no-progress --no-suggest
+    - name:  Install Laravel dependencies
+      run: composer install --prefer-dist --no-progress --no-dev
 
-    - name: Copy .env.example to .env
-      run: cp .env.example .env
+    - name: Validate Laravel setup
+      run: |
+        cp .env.example .env
+        php artisan key:generate
+        php artisan config:cache
 
-    - name: Generate app key
-      run: php artisan key:generate
+    - name:  Package codebase
+      run: |
+        mkdir -p deployment
+        tar -czf deployment/release.tar.gz --exclude=deployment --exclude=.git --exclude=node_modules .
 
-    - name: Run Laravel config cache
-      run: php artisan config:cache
+    - name: Upload release to server
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        source: "deployment/release.tar.gz"
+        target: "${{ secrets.DEPLOY_PATH }}"
 
-    - name: Success message
-      run: echo "🎉 Laravel CI completed successfully!"
+    - name: 🔧 Deploy on server
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          cd ${{ secrets.DEPLOY_PATH }}
+          rm -rf current
+          mkdir -p current
+          tar -xzf release.tar.gz -C current
+          cd current
 
-# name: Laravel CD
+          echo " Writing .env file"
+          cat <<EOT > .env
+          APP_NAME=${{ secrets.APP_NAME }}
+          APP_ENV=production
+          APP_KEY=${{ secrets.APP_KEY }}
+          APP_DEBUG=false
+          APP_URL=https://subbirr.com
 
-# on:
-#   push:
-#     branches: [main]
-#   workflow_dispatch:
-#     inputs:
-#       environment:
-#         description: 'Environment to deploy to'
-#         required: true
-#         default: 'production'
-#         type: choice
-#         options:
-#           - production
+          DB_CONNECTION=pgsql
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_DATABASE=${{ secrets.DB_DATABASE }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          EOT
 
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
+            echo " Setting permissions"
+            chmod -R 755 .
+            chmod -R 775 storage bootstrap/cache
 
-#     steps:
-#     - name:  Checkout code
-#       uses: actions/checkout@v4
+            echo "Running Laravel setup"
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
 
-#     - name:  Setup PHP & Composer
-#       uses: shivammathur/setup-php@v2
-#       with:
-#         php-version: '8.2'
-#         extensions: mbstring, pdo, pdo_mysql, tokenizer, xml
-#         tools: composer:v2
-
-#     - name:  Install Laravel dependencies
-#       run: composer install --prefer-dist --no-progress --no-dev
-
-#     - name: Validate Laravel setup
-#       run: |
-#         cp .env.example .env
-#         php artisan key:generate
-#         php artisan config:cache
-
-#     - name:  Package codebase
-#       run: |
-#         mkdir -p deployment
-#         tar -czf deployment/release.tar.gz --exclude=deployment --exclude=.git --exclude=node_modules .
-
-#     - name: Upload release to server
-#       uses: appleboy/scp-action@v0.1.4
-#       with:
-#         host: ${{ secrets.SSH_HOST }}
-#         username: ${{ secrets.SSH_USERNAME }}
-#         key: ${{ secrets.SSH_PRIVATE_KEY }}
-#         port: ${{ secrets.SSH_PORT }}
-#         source: "deployment/release.tar.gz"
-#         target: "${{ secrets.DEPLOY_PATH }}"
-
-#     - name: 🔧 Deploy on server
-#       uses: appleboy/ssh-action@v0.1.10
-#       with:
-#         host: ${{ secrets.SSH_HOST }}
-#         username: ${{ secrets.SSH_USERNAME }}
-#         key: ${{ secrets.SSH_PRIVATE_KEY }}
-#         port: ${{ secrets.SSH_PORT }}
-#         script: |
-#           cd ${{ secrets.DEPLOY_PATH }}
-#           rm -rf current
-#           mkdir -p current
-#           tar -xzf release.tar.gz -C current
-#           cd current
-
-#           echo " Writing .env file"
-#           cat <<EOT > .env
-#           APP_NAME=${{ secrets.APP_NAME }}
-#           APP_ENV=production
-#           APP_KEY=${{ secrets.APP_KEY }}
-#           APP_DEBUG=false
-#           APP_URL=https://subbirr.com
-
-#           DB_CONNECTION=pgsql
-#           DB_HOST=${{ secrets.DB_HOST }}
-#           DB_PORT=${{ secrets.DB_PORT }}
-#           DB_DATABASE=${{ secrets.DB_DATABASE }}
-#           DB_USERNAME=${{ secrets.DB_USERNAME }}
-#           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-#           EOT
-
-#             echo " Setting permissions"
-#             chmod -R 755 .
-#             chmod -R 775 storage bootstrap/cache
-
-#             echo "Running Laravel setup"
-#             php artisan migrate --force
-#             php artisan config:cache
-#             php artisan route:cache
-#             php artisan view:cache
-
-#             echo "Laravel deployed successfully!"
+            echo "Laravel deployed successfully!"

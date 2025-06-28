@@ -9,7 +9,7 @@ return [
     'allowed_origins' => [
         'http://localhost:3000',     // for web frontend
         'http://localhost',          // sometimes mobile debug
-        '*'                          // allow any (be careful in production)
+        '*'                     
     ],
 
     'allowed_origins_patterns' => [],

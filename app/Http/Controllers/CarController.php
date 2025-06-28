@@ -67,7 +67,7 @@ class CarController extends Controller
                 'vin' => $request->vin,
                 'seating_capacity' => $request->seating_capacity,
                 'license_plate' => $request->license_plate,
-                'status' =>'payment_pending',
+                'status' =>'pending',
                 'price_per_day' => $request->price_per_day,
                 'fuel_type' => $request->fuel_type,
                 'transmission' => $request->transmission,
@@ -97,13 +97,14 @@ class CarController extends Controller
                     ]);
                 }
             }
-        // Generate tx_ref and save payment
-        $tx_ref = 'CARPOST-' . uniqid();
         $fee = ListingFee::where('item_type', 'car')
             ->where('listing_type', $car->listing_type)
             ->orderByDesc('id') // get the latest active fee
             ->first();
-        if($fee) {
+        // Generate tx_ref and save payment
+        $tx_ref = 'CARPOST-' . uniqid();
+    
+        if($fee && $fee->fee > 0 ) {
           Platformpayment::create([
             'item_id'=>$car->id,
             'item_type'=>'car',
@@ -114,7 +115,7 @@ class CarController extends Controller
             'transaction_date' => now(),
             'tx_ref' => $tx_ref,
         ]);
-    }
+    
     
         DB::commit();
         
@@ -156,10 +157,19 @@ class CarController extends Controller
 
         return response()->json(['error' => 'Unable to redirect to Chapa.'], 500);
 
-        } catch (\Exception $e) {
+       }
+        DB::commit();
+        $car->load('images');
+        return response()->json([
+                'message' => 'Car created successfully. No payment required.',
+                'car' => $car,
+            ]);
+    } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
+        
+    
     }
 
     public function show($id)
