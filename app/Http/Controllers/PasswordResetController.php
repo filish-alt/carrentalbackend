@@ -77,7 +77,7 @@ class PasswordResetController extends Controller
        //Redis::setex('password_reset:' . $request->identifier, 3600, $code);
         if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
             Log::info("OTP for {$user->email}: {$code}");
-            Mail::raw("Your reseet code is: $otp", function ($message) use ($user) {
+            Mail::raw("Your reseet code is: $code", function ($message) use ($user) {
             $message->to($user->email)
                     ->subject('Reset Code');
         });
