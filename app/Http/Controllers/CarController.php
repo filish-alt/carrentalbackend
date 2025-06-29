@@ -23,6 +23,17 @@ class CarController extends Controller
         return Car::with('images')->get();
     }
 
+    public function myCars()
+    {
+            $userId = auth()->id();
+
+            $cars = Car::with('images')
+                ->where('owner_id', $userId)
+                ->get();
+
+            return response()->json($cars);
+    }
+
     public function store(Request $request)
     {
         $user = Auth::user();

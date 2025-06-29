@@ -171,6 +171,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::post('cars', [CarController::class, 'store']);
+    Route::get('mycars', [CarController::class, 'myCars']);
     Route::put('cars/{car}', [CarController::class, 'update']);
     Route::delete('cars/{car}', [CarController::class, 'destroy']);
     Route::patch('/cars/{id}/approve', [CarController::class, 'approveCar']); // Approve car listing
