@@ -176,7 +176,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/cars/{id}/approve', [CarController::class, 'approveCar']); // Approve car listing
     Route::patch('/cars/{id}/reject', [CarController::class, 'rejectCar']);   // Reject car listing
     Route::patch('/cars/{id}/block', [CarController::class, 'blockCar']);     // Block car
-
+    Route::patch('/cars/{id}/status', [CarController::class, 'CarStatus']); 
 
     Route::apiResource('/vehicle-inspections', VehicleInspectionController::class);
     Route::apiResource('/vehicle-categories', VehicleCategoryController::class);

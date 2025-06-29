@@ -265,11 +265,26 @@ class CarController extends Controller
             return response()->json(['message' => 'Car not found'], 404);
         }
 
-        $car->status = 'approved';
+        $car->status = 'available';
         $car->save();
 
         return response()->json(['message' => 'Car listing approved']);
     }
+    public function CarStatus(Request $request, $id)
+        {
+            $car = Car::find($id);
+            if (!$car) {
+                return response()->json(['message' => 'Car not found'], 404);
+            }
+            $request->validate([
+                'status' => 'required|string',
+            ]);
+            $car->status = $request->status;
+            $car->save();
+
+            return response()->json(['message' => 'Car listing status updated successfully', 'car' => $car]);
+        }
+
 
     public function rejectCar($id)
     {
