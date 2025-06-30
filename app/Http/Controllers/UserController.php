@@ -88,13 +88,14 @@ public function updateProfilePicture(Request $request)
 
         $validator = Validator::make($request->all(), [
             'first_name'       => 'sometimes|required|string|max:255',
+            'middle_name'        => 'sometimes|required|string|max:255',
             'last_name'        => 'sometimes|required|string|max:255',
             'email'            => ['sometimes', 'required', 'email', Rule::unique('users')->ignore($user->id)],
-            'phone'            => ['sometimes', 'required', 'regex:/^09\d{8}$/', Rule::unique('users')->ignore($user->id)],
+            'phone'            => ['sometimes', 'required', 'regex:/^(09|07)\d{8}$/', Rule::unique('users')->ignore($user->id)],
             'password'         => 'nullable|string|min:6|confirmed',
             'driver_liscence'  => 'nullable|file|mimes:jpg,jpeg,png,pdf',
             'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-            'adress'          => 'nullable|string|max:255',
+            'address'          => 'nullable|string|max:255',
             'city'             => 'nullable|string|max:100',
             'birth_Date'       => 'nullable|date',
             'role'             => 'nullable|string',
@@ -122,10 +123,11 @@ public function updateProfilePicture(Request $request)
             
              
         $user->first_name = $request->first_name ?? $user->first_name;
+        $user->middle_name = $request->middle_name ?? $user->middle_name;
         $user->last_name = $request->last_name ?? $user->last_name;
         $user->email = $request->email ?? $user->email;
         $user->phone = $request->phone ?? $user->phone;
-        $user->adress = $request->adress ?? $user->adress;
+        $user->address = $request->address ?? $user->address;
         $user->city = $request->city ?? $user->city;
         $user->birth_Date = $request->birth_Date ?? $user->birth_Date;
         $user->role = $request->role ?? $user->role;
