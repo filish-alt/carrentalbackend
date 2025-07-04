@@ -8,6 +8,8 @@ use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Users;
 use App\Models\SuperAdmin;
+use Illuminate\Validation\Rule;
+
 
 
 use Illuminate\Support\Facades\Redis;
@@ -381,7 +383,7 @@ public function login(Request $request)
      $normalUser = $isEmail
         ? $userQuery->where('email', $loginInput)->first()
         : $userQuery->where('phone', $loginInput)->first();
-        
+
         if ($normalUser && Hash::check($request->password, $normalUser->hash_password)) {
             $user = $normalUser;
             $userType = 'user';
