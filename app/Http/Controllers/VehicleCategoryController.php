@@ -5,6 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\VehicleCategory;
 use Illuminate\Http\Request;
 
+/**
+ * @OA\Tag(
+ *     name="Vehicle Categories",
+ *     description="Vehicle category management endpoints"
+ * )
+ */
 class VehicleCategoryController extends Controller
 {
     public function index()

@@ -1,0 +1,1585 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Car Rental Management System API",
+        "description": "A comprehensive car rental management system with user authentication, vehicle management, booking system, payment processing, and review functionality. This system supports both car rentals and property (home) rentals.",
+        "contact": {
+            "name": "Car Rental System Support",
+            "email": "support@carrentalsystem.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://my-default-host.com",
+            "description": "Car Rental API Server"
+        }
+    ],
+    "paths": {
+        "/api/admin/register": {
+            "post": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Register a new admin user",
+                "operationId": "b5914ab0c7910e791c61a1fd9d5e6617",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john.doe@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Admin registered successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Admin registered successfully."
+                                        },
+                                        "user": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Registration failed"
+                    }
+                }
+            }
+        },
+        "/api/admin/list": {
+            "get": {
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get all registered admin users",
+                "operationId": "e1edeac457da516be7013d26e13379fe",
+                "responses": {
+                    "200": {
+                        "description": "List of admin users fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "All admin fetched successfully."
+                                        },
+                                        "users": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/register": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Register a new user and send OTP",
+                "description": "Register a new user account. The system will send an OTP to both phone and email for verification.",
+                "operationId": "8a56853624e025573120a09a4c75d468",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "middle_name",
+                                    "last_name",
+                                    "email",
+                                    "phone",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "description": "User's first name",
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "middle_name": {
+                                        "description": "User's middle name",
+                                        "type": "string",
+                                        "example": "A."
+                                    },
+                                    "last_name": {
+                                        "description": "User's last name",
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "email": {
+                                        "description": "User's email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "phone": {
+                                        "description": "User's phone number (Ethiopian format)",
+                                        "type": "string",
+                                        "pattern": "^(09|07)\\d{8}$",
+                                        "example": "0912345678"
+                                    },
+                                    "password": {
+                                        "description": "User's password (minimum 6 characters)",
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 6,
+                                        "example": "secret123"
+                                    },
+                                    "password_confirmation": {
+                                        "description": "Password confirmation",
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    },
+                                    "address": {
+                                        "description": "User's address (optional)",
+                                        "type": "string",
+                                        "example": "Addis Ababa"
+                                    },
+                                    "city": {
+                                        "description": "User's city (optional)",
+                                        "type": "string",
+                                        "example": "Addis Ababa"
+                                    },
+                                    "birth_date": {
+                                        "description": "User's birth date (optional)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1990-01-01"
+                                    },
+                                    "driver_liscence": {
+                                        "description": "Driver's license file (optional, jpg/jpeg/png/pdf)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "digital_id": {
+                                        "description": "Digital ID file (optional, jpg/jpeg/png/pdf)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "passport": {
+                                        "description": "Passport file (optional, jpg/jpeg/png/pdf)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User registered successfully."
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/verify-phone-otp": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Verify phone OTP",
+                "operationId": "5b23060305a7673f0c43a289efe465b2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "phone",
+                                    "otp"
+                                ],
+                                "properties": {
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "0912345678"
+                                    },
+                                    "otp": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Phone verified successfully"
+                    },
+                    "400": {
+                        "description": "Invalid or expired OTP"
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Login user",
+                "description": "Authenticate a user and return access token. Supports both regular users and admin users.",
+                "operationId": "a3b306d14572d1f4bd6c064b3233e7b8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "description": "User's email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "description": "User's password",
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login successful"
+                                        },
+                                        "role": {
+                                            "type": "string",
+                                            "example": "User"
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/User"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "1|abc123xyz..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid credentials."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Account not verified or 2FA required",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Phone number not verified. Please enter the OTP sent to your phone."
+                                        },
+                                        "two_factor_pending": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "user_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/booking": {
+            "post": {
+                "tags": [
+                    "Booking Management"
+                ],
+                "summary": "Create a new booking",
+                "description": "Create a new car rental booking with payment processing",
+                "operationId": "077614f000582fb3bfada3650bf02077",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "car_id",
+                                    "pickup_date",
+                                    "return_date",
+                                    "total_price"
+                                ],
+                                "properties": {
+                                    "car_id": {
+                                        "description": "ID of the car to book",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "pickup_date": {
+                                        "description": "Booking start date",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-01-15"
+                                    },
+                                    "return_date": {
+                                        "description": "Booking end date",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-01-20"
+                                    },
+                                    "total_price": {
+                                        "description": "Total booking amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 250
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Booking created successfully with payment redirect",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Booking created. Redirect to Chapa."
+                                        },
+                                        "checkout_url": {
+                                            "type": "string",
+                                            "example": "https://checkout.chapa.co/checkout/payment/..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Car not available or validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Car is not available for booking"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Cannot book own car",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "You Can't Book Your Own car"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Car already booked for selected dates",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Car is already booked for the selected date range"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/cars": {
+            "get": {
+                "tags": [
+                    "Car Management"
+                ],
+                "summary": "Get all cars",
+                "description": "Retrieve a list of all available cars with their images",
+                "operationId": "1fd4f1fdc0da258c5084bcdce4bbe693",
+                "responses": {
+                    "200": {
+                        "description": "List of cars retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Car"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Car Management"
+                ],
+                "summary": "Create a new car listing",
+                "description": "Create a new car listing with images and payment processing for listing fees",
+                "operationId": "6f519ab2c9767d4d3b1be7cf8f1287ed",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "owner_id",
+                                    "make",
+                                    "model",
+                                    "seating_capacity",
+                                    "license_plate",
+                                    "status",
+                                    "price_per_day",
+                                    "fuel_type",
+                                    "transmission",
+                                    "listing_type"
+                                ],
+                                "properties": {
+                                    "owner_id": {
+                                        "description": "ID of the car owner",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "make": {
+                                        "description": "Car manufacturer",
+                                        "type": "string",
+                                        "example": "Toyota"
+                                    },
+                                    "model": {
+                                        "description": "Car model",
+                                        "type": "string",
+                                        "example": "Camry"
+                                    },
+                                    "vin": {
+                                        "description": "Vehicle identification number (optional)",
+                                        "type": "string",
+                                        "example": "1HGBH41JXMN109186"
+                                    },
+                                    "seating_capacity": {
+                                        "description": "Number of seats",
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "license_plate": {
+                                        "description": "Car license plate",
+                                        "type": "string",
+                                        "example": "AB123CD"
+                                    },
+                                    "status": {
+                                        "description": "Car status",
+                                        "type": "string",
+                                        "example": "Available"
+                                    },
+                                    "price_per_day": {
+                                        "description": "Daily rental price",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
+                                    },
+                                    "fuel_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Gasoline",
+                                            "Diesel",
+                                            "Electric",
+                                            "Hybrid"
+                                        ],
+                                        "example": "Gasoline"
+                                    },
+                                    "transmission": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Manual",
+                                            "Automatic"
+                                        ],
+                                        "example": "Automatic"
+                                    },
+                                    "location_lat": {
+                                        "description": "Latitude (optional)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 9.032
+                                    },
+                                    "location_long": {
+                                        "description": "Longitude (optional)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 38.7615
+                                    },
+                                    "pickup_location": {
+                                        "description": "Pickup location (optional)",
+                                        "type": "string",
+                                        "example": "Addis Ababa Airport"
+                                    },
+                                    "return_location": {
+                                        "description": "Return location (optional)",
+                                        "type": "string",
+                                        "example": "Addis Ababa Airport"
+                                    },
+                                    "listing_type": {
+                                        "description": "Type of listing",
+                                        "type": "string",
+                                        "enum": [
+                                            "rent",
+                                            "sell",
+                                            "both"
+                                        ],
+                                        "example": "rent"
+                                    },
+                                    "sell_price": {
+                                        "description": "Sale price (if selling)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 25000
+                                    },
+                                    "is_negotiable": {
+                                        "description": "Whether price is negotiable",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "mileage": {
+                                        "description": "Car mileage (optional)",
+                                        "type": "integer",
+                                        "example": 50000
+                                    },
+                                    "year": {
+                                        "description": "Manufacturing year (optional)",
+                                        "type": "integer",
+                                        "example": 2020
+                                    },
+                                    "condition": {
+                                        "description": "Car condition (optional)",
+                                        "type": "string",
+                                        "enum": [
+                                            "New",
+                                            "Excellent",
+                                            "Good",
+                                            "Fair",
+                                            "Poor"
+                                        ],
+                                        "example": "Good"
+                                    },
+                                    "images": {
+                                        "description": "Car images (max 2MB each)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Car created successfully with payment redirect",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Car created. Redirect to Chapa for payment."
+                                        },
+                                        "checkout_url": {
+                                            "type": "string",
+                                            "example": "https://checkout.chapa.co/checkout/payment/..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Car created successfully without payment",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Car created successfully. No payment required."
+                                        },
+                                        "car": {
+                                            "$ref": "#/components/schemas/Car"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Error: Database transaction failed"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/mycars": {
+            "get": {
+                "tags": [
+                    "Car Management"
+                ],
+                "summary": "Get user's cars",
+                "description": "Retrieve all cars owned by the authenticated user",
+                "operationId": "b6e06d1bd1d78b7f876c7567b40897e3",
+                "responses": {
+                    "200": {
+                        "description": "User's cars retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Car"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/chapa/callback": {
+            "get": {
+                "tags": [
+                    "Payment Processing"
+                ],
+                "summary": "Handle Chapa payment callback for bookings",
+                "description": "Webhook endpoint to handle payment verification callbacks from Chapa for booking payments",
+                "operationId": "77b3607b24a53d938b425ae3c3143c0b",
+                "parameters": [
+                    {
+                        "name": "tx_ref",
+                        "in": "query",
+                        "description": "Transaction reference from Chapa",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "TX-abc123"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment verified and processed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "string",
+                                            "example": "Payment successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Payment verification failed or missing transaction reference",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Transaction reference is missing"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Payment record not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Payment not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/google": {
+            "get": {
+                "tags": [
+                    "SSO Authentication"
+                ],
+                "summary": "Redirect to Google OAuth",
+                "description": "Initiate Google OAuth authentication flow",
+                "operationId": "0fb6b0e301610e77a2f685bf10e4673e",
+                "parameters": [
+                    {
+                        "name": "platform",
+                        "in": "query",
+                        "description": "Platform type for appropriate callback",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "web",
+                                "mobile"
+                            ]
+                        },
+                        "example": "web"
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Redirect to Google OAuth page"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "User": {
+                "required": [
+                    "id",
+                    "first_name",
+                    "last_name",
+                    "email",
+                    "phone"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "first_name": {
+                        "type": "string",
+                        "example": "John"
+                    },
+                    "middle_name": {
+                        "type": "string",
+                        "example": "A."
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "example": "Doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john@example.com"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "0912345678"
+                    },
+                    "address": {
+                        "type": "string",
+                        "example": "123 Main Street"
+                    },
+                    "city": {
+                        "type": "string",
+                        "example": "Addis Ababa"
+                    },
+                    "birth_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "1990-01-01"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "User",
+                            "Admin",
+                            "SuperAdmin"
+                        ],
+                        "example": "User"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "Pending",
+                            "Active",
+                            "Inactive",
+                            "Banned"
+                        ],
+                        "example": "Active"
+                    },
+                    "is_verified": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "two_factor_enabled": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Car": {
+                "required": [
+                    "id",
+                    "make",
+                    "model",
+                    "price_per_day",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "owner_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "make": {
+                        "type": "string",
+                        "example": "Toyota"
+                    },
+                    "model": {
+                        "type": "string",
+                        "example": "Camry"
+                    },
+                    "vin": {
+                        "type": "string",
+                        "example": "1HGBH41JXMN109186"
+                    },
+                    "seating_capacity": {
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "license_plate": {
+                        "type": "string",
+                        "example": "AB123CD"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "Available",
+                            "Rented",
+                            "Maintenance",
+                            "Blocked"
+                        ],
+                        "example": "Available"
+                    },
+                    "price_per_day": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 50
+                    },
+                    "fuel_type": {
+                        "type": "string",
+                        "enum": [
+                            "Gasoline",
+                            "Diesel",
+                            "Electric",
+                            "Hybrid"
+                        ],
+                        "example": "Gasoline"
+                    },
+                    "transmission": {
+                        "type": "string",
+                        "enum": [
+                            "Manual",
+                            "Automatic"
+                        ],
+                        "example": "Automatic"
+                    },
+                    "location_lat": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 9.032
+                    },
+                    "location_long": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 38.7615
+                    },
+                    "pickup_location": {
+                        "type": "string",
+                        "example": "Addis Ababa Airport"
+                    },
+                    "return_location": {
+                        "type": "string",
+                        "example": "Addis Ababa Airport"
+                    },
+                    "listing_type": {
+                        "type": "string",
+                        "enum": [
+                            "rent",
+                            "sell",
+                            "both"
+                        ],
+                        "example": "rent"
+                    },
+                    "sell_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 25000
+                    },
+                    "is_negotiable": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "mileage": {
+                        "type": "integer",
+                        "example": 50000
+                    },
+                    "year": {
+                        "type": "integer",
+                        "example": 2020
+                    },
+                    "condition": {
+                        "type": "string",
+                        "enum": [
+                            "New",
+                            "Excellent",
+                            "Good",
+                            "Fair",
+                            "Poor"
+                        ],
+                        "example": "Good"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Booking": {
+                "required": [
+                    "id",
+                    "user_id",
+                    "car_id",
+                    "start_date",
+                    "end_date",
+                    "total_price",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "car_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2024-01-15"
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2024-01-20"
+                    },
+                    "total_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 250
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "Pending",
+                            "Confirmed",
+                            "Active",
+                            "Completed",
+                            "Cancelled"
+                        ],
+                        "example": "Confirmed"
+                    },
+                    "pickup_location": {
+                        "type": "string",
+                        "example": "Addis Ababa Airport"
+                    },
+                    "return_location": {
+                        "type": "string",
+                        "example": "Addis Ababa Airport"
+                    },
+                    "special_requests": {
+                        "type": "string",
+                        "example": "Child seat required"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Home": {
+                "required": [
+                    "id",
+                    "title",
+                    "price",
+                    "listing_type"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "owner_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Beautiful 2-Bedroom Apartment"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Modern apartment with great city views"
+                    },
+                    "location": {
+                        "type": "string",
+                        "example": "Bole, Addis Ababa"
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 80
+                    },
+                    "listing_type": {
+                        "type": "string",
+                        "enum": [
+                            "rent",
+                            "sell",
+                            "both"
+                        ],
+                        "example": "rent"
+                    },
+                    "bedrooms": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "bathrooms": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "area": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 120.5
+                    },
+                    "amenities": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "WiFi",
+                            "Parking",
+                            "Pool"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "Available",
+                            "Rented",
+                            "Sold",
+                            "Blocked"
+                        ],
+                        "example": "Available"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Review": {
+                "required": [
+                    "id",
+                    "user_id",
+                    "rating",
+                    "comment"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "car_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "home_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "rating": {
+                        "type": "integer",
+                        "maximum": 5,
+                        "minimum": 1,
+                        "example": 4
+                    },
+                    "comment": {
+                        "type": "string",
+                        "example": "Great car, very comfortable and clean!"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Payment": {
+                "required": [
+                    "id",
+                    "user_id",
+                    "amount",
+                    "status",
+                    "payment_method"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "booking_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "home_booking_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 250
+                    },
+                    "currency": {
+                        "type": "string",
+                        "example": "ETB"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "Pending",
+                            "Completed",
+                            "Failed",
+                            "Refunded"
+                        ],
+                        "example": "Completed"
+                    },
+                    "payment_method": {
+                        "type": "string",
+                        "enum": [
+                            "Chapa",
+                            "Bank Transfer",
+                            "Cash"
+                        ],
+                        "example": "Chapa"
+                    },
+                    "tx_ref": {
+                        "type": "string",
+                        "example": "tx_12345"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Notification": {
+                "required": [
+                    "id",
+                    "user_id",
+                    "title",
+                    "message",
+                    "type"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Booking Confirmed"
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Your booking has been confirmed"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "info",
+                            "success",
+                            "warning",
+                            "error"
+                        ],
+                        "example": "success"
+                    },
+                    "read": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Error": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "An error occurred"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "example": {
+                            "field": [
+                                "The field is required."
+                            ]
+                        }
+                    },
+                    "code": {
+                        "type": "integer",
+                        "example": 400
+                    }
+                },
+                "type": "object"
+            },
+            "SuccessResponse": {
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Operation completed successfully"
+                    },
+                    "data": {
+                        "type": "object",
+                        "example": []
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "success"
+                    }
+                },
+                "type": "object"
+            },
+            "VehicleCategory": {
+                "required": [
+                    "id",
+                    "category_name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "category_name": {
+                        "type": "string",
+                        "example": "SUV"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Sport Utility Vehicle"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "Enter JWT Bearer token",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Booking Management",
+            "description": "Booking creation, management, and tracking"
+        },
+        {
+            "name": "Payment Processing",
+            "description": "Payment methods and transaction handling"
+        },
+        {
+            "name": "SSO Authentication",
+            "description": "Single Sign-On authentication endpoints (Google OAuth)"
+        },
+        {
+            "name": "Authentication",
+            "description": "User authentication and authorization endpoints"
+        },
+        {
+            "name": "Car Management",
+            "description": "Vehicle listing, management, and search functionality"
+        },
+        {
+            "name": "Admin",
+            "description": "Admin"
+        },
+        {
+            "name": "Auth",
+            "description": "Auth"
+        }
+    ]
+}

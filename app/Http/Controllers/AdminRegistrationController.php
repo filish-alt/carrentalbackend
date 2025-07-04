@@ -16,6 +16,42 @@ class AdminRegistrationController extends Controller
      * @param AdminRegistrationRequest $request
      * 
      */
+     /**
+     * @OA\Tag(
+     *     name="Admin",
+     *     description="Operations related to Admin users"
+     * )
+     */
+
+    /**
+     * @OA\Post(
+     *     path="/api/admin/register",
+     *     summary="Register a new admin user",
+     *     tags={"Admin"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"first_name", "last_name", "email", "password"},
+     *             @OA\Property(property="first_name", type="string", example="John"),
+     *             @OA\Property(property="last_name", type="string", example="Doe"),
+     *             @OA\Property(property="email", type="string", format="email", example="john.doe@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="secret123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Admin registered successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Admin registered successfully."),
+     *             @OA\Property(property="user", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Registration failed"
+     *     )
+     * )
+     */
     public function register(AdminRegistrationRequest $request): JsonResponse
     {
         try {
@@ -66,7 +102,21 @@ class AdminRegistrationController extends Controller
  
     }
 
-      // Get all users
+      /**
+     * @OA\Get(
+     *     path="/api/admin/list",
+     *     summary="Get all registered admin users",
+     *     tags={"Admin"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of admin users fetched successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="All admin fetched successfully."),
+     *             @OA\Property(property="users", type="array", @OA\Items(type="object"))
+     *         )
+     *     )
+     * )
+     */
     public function getAllAdmin()
     {
         $users = SuperAdmin::all();

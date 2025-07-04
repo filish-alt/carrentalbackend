@@ -3,17 +3,43 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
 use App\Models\Users;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
-use App\Models\AuthCode; 
 
+use App\Models\AuthCode;
+use Carbon\Carbon;
+use Illuminate\Support\Str;
+
+/**
+ * @OA\Tag(
+ *     name="SSO Authentication",
+ *     description="Single Sign-On authentication endpoints (Google OAuth)"
+ * )
+ */
 class SSOController extends Controller
 {
-
+    /**
+     * @OA\Get(
+     *     path="/api/auth/google",
+     *     summary="Redirect to Google OAuth",
+     *     tags={"SSO Authentication"},
+     *     description="Initiate Google OAuth authentication flow",
+     *     @OA\Parameter(
+     *         name="platform",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"web", "mobile"}),
+     *         description="Platform type for appropriate callback",
+     *         example="web"
+     *     ),
+     *     @OA\Response(
+     *         response=302,
+     *         description="Redirect to Google OAuth page"
+     *     )
+     * )
+     */
      public function redirectToGoogle(Request $request)
         {
             $platform = $request->query('platform'); 

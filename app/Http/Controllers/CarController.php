@@ -18,11 +18,49 @@ use Illuminate\Support\Facades\Auth;
 
 class CarController extends Controller
 {
+    /**
+     * @OA\Get(
+     *     path="/api/cars",
+     *     summary="Get all cars",
+     *     tags={"Car Management"},
+     *     description="Retrieve a list of all available cars with their images",
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of cars retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Car")
+     *         )
+     *     )
+     * )
+     */
     public function index()
     {
         return Car::with('images')->get();
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/mycars",
+     *     summary="Get user's cars",
+     *     tags={"Car Management"},
+     *     description="Retrieve all cars owned by the authenticated user",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="User's cars retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Car")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(ref="#/components/schemas/Error")
+     *     )
+     * )
+     */
     public function myCars()
     {
             $userId = auth()->id();
@@ -34,6 +72,73 @@ class CarController extends Controller
             return response()->json($cars);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/cars",
+     *     summary="Create a new car listing",
+     *     tags={"Car Management"},
+     *     description="Create a new car listing with images and payment processing for listing fees",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"owner_id", "make", "model", "seating_capacity", "license_plate", "status", "price_per_day", "fuel_type", "transmission", "listing_type"},
+     *                 @OA\Property(property="owner_id", type="integer", example=1, description="ID of the car owner"),
+     *                 @OA\Property(property="make", type="string", example="Toyota", description="Car manufacturer"),
+     *                 @OA\Property(property="model", type="string", example="Camry", description="Car model"),
+     *                 @OA\Property(property="vin", type="string", example="1HGBH41JXMN109186", description="Vehicle identification number (optional)"),
+     *                 @OA\Property(property="seating_capacity", type="integer", example=5, description="Number of seats"),
+     *                 @OA\Property(property="license_plate", type="string", example="AB123CD", description="Car license plate"),
+     *                 @OA\Property(property="status", type="string", example="Available", description="Car status"),
+     *                 @OA\Property(property="price_per_day", type="number", format="float", example=50.00, description="Daily rental price"),
+     *                 @OA\Property(property="fuel_type", type="string", enum={"Gasoline", "Diesel", "Electric", "Hybrid"}, example="Gasoline"),
+     *                 @OA\Property(property="transmission", type="string", enum={"Manual", "Automatic"}, example="Automatic"),
+     *                 @OA\Property(property="location_lat", type="number", format="float", example=9.0320, description="Latitude (optional)"),
+     *                 @OA\Property(property="location_long", type="number", format="float", example=38.7615, description="Longitude (optional)"),
+     *                 @OA\Property(property="pickup_location", type="string", example="Addis Ababa Airport", description="Pickup location (optional)"),
+     *                 @OA\Property(property="return_location", type="string", example="Addis Ababa Airport", description="Return location (optional)"),
+     *                 @OA\Property(property="listing_type", type="string", enum={"rent", "sell", "both"}, example="rent", description="Type of listing"),
+     *                 @OA\Property(property="sell_price", type="number", format="float", example=25000.00, description="Sale price (if selling)"),
+     *                 @OA\Property(property="is_negotiable", type="boolean", example=true, description="Whether price is negotiable"),
+     *                 @OA\Property(property="mileage", type="integer", example=50000, description="Car mileage (optional)"),
+     *                 @OA\Property(property="year", type="integer", example=2020, description="Manufacturing year (optional)"),
+     *                 @OA\Property(property="condition", type="string", enum={"New", "Excellent", "Good", "Fair", "Poor"}, example="Good", description="Car condition (optional)"),
+     *                 @OA\Property(property="images", type="array", @OA\Items(type="string", format="binary"), description="Car images (max 2MB each)")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Car created successfully with payment redirect",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Car created. Redirect to Chapa for payment."),
+     *             @OA\Property(property="checkout_url", type="string", example="https://checkout.chapa.co/checkout/payment/...")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Car created successfully without payment",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Car created successfully. No payment required."),
+     *             @OA\Property(property="car", ref="#/components/schemas/Car")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(ref="#/components/schemas/Error")
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Error: Database transaction failed")
+     *         )
+     *     )
+     * )
+     */
     public function store(Request $request)
     {
         $user = Auth::user();

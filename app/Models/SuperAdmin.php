@@ -21,6 +21,7 @@ class SuperAdmin extends Model implements Authenticatable, AuthorizableContract
         'first_name',
         'last_name',
         'email',
+        'phone',
         'hash_password',
         'role',
         'status',

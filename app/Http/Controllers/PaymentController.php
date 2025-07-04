@@ -11,10 +11,52 @@ use App\Models\Car;
 use App\Models\Home;
 
 
+/**
+ * @OA\Tag(
+ *     name="Payment Processing",
+ *     description="Payment methods and transaction handling endpoints"
+ * )
+ */
 class PaymentController extends Controller
 {
-
-public function handleCallback(Request $request)
+    /**
+     * @OA\Get(
+     *     path="/api/chapa/callback",
+     *     summary="Handle Chapa payment callback for bookings",
+     *     tags={"Payment Processing"},
+     *     description="Webhook endpoint to handle payment verification callbacks from Chapa for booking payments",
+     *     @OA\Parameter(
+     *         name="tx_ref",
+     *         in="query",
+     *         required=true,
+     *         @OA\Schema(type="string"),
+     *         description="Transaction reference from Chapa",
+     *         example="TX-abc123"
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment verified and processed successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="string", example="Payment successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Payment verification failed or missing transaction reference",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Transaction reference is missing")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Payment record not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Payment not found")
+     *         )
+     *     )
+     * )
+     */
+    public function handleCallback(Request $request)
 {
     $tx_ref = $request->query('tx_ref');
 
