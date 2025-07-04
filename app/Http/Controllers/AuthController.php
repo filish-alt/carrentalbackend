@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 
 
@@ -133,7 +134,7 @@ class AuthController extends Controller
                                     'email',
                                     Rule::unique('users', 'email'),
                                     function ($attribute, $value, $fail) {
-                                        if (DB::table('superadmin')->where('email', $value)->exists()) {
+                                        if (DB::table('super_admins')->where('email', $value)->exists()) {
                                             $fail('The email has already been taken.');
                                         }
                                     },

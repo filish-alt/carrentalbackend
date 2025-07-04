@@ -5,7 +5,7 @@ namespace App\Http\Request\Admin;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Rule;
-
+use Illuminate\Support\Facades\DB;
 class AdminRegistrationRequest extends FormRequest
 {
     /**
@@ -32,7 +32,7 @@ class AdminRegistrationRequest extends FormRequest
             'email'      => [
                             'required',
                             'email',
-                            Rule::unique('superadmins', 'email'),
+                            Rule::unique('super_admins', 'email'),
                             function ($attribute, $value, $fail) {
                                 if (DB::table('users')->where('email', $value)->exists()) {
                                     $fail('The email is already registered by a user.');
