@@ -10,7 +10,7 @@ use App\Models\Users;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\File;
-
+use Illuminate\Support\Facades\Log;
 class UserController extends Controller
 {
  // update user profile picture
