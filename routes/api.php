@@ -164,7 +164,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/users', [UserController::class, 'getAllUsers']);
-    Route::put('/users/{id}', [UserController::class, 'updateUser']);
+    Route::post('/users/{id}', [UserController::class, 'updateUser']);
     Route::patch('/users/{id}/ban', [UserController::class, 'banUser']);     // Ban a user
     Route::patch('/users/{id}/unban', [UserController::class, 'unbanUser']); // Unban a user
     Route::delete('/users/{id}', [UserController::class, 'deleteUser']);     // Delete a user
