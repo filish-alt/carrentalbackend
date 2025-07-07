@@ -4,41 +4,32 @@ services:
   app:
     build:
       context: .
-      dockerfile: docker/php/Dockerfile
-    image: laravel-app
-    container_name: laravel-app
+      dockerfile: Dockerfile
+    image: superapp-backend
+    container_name: superapp-app
     restart: unless-stopped
     working_dir: /var/www
     volumes:
       - .:/var/www
-    networks:
-      - laravel
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    command: php artisan serve --host=0.0.0.0 --port=8000
 
   db:
     image: postgres:15
-    container_name: laravel-postgres
+    container_name: superapp-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: car_rental           
-      POSTGRES_USER: postgres           
-      POSTGRES_PASSWORD: 1234           
+      POSTGRES_DB: superapp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
     ports:
       - "5432:5432"
     volumes:
       - dbdata:/var/lib/postgresql/data
-    networks:
-      - laravel
-
-  redis:
-    image: redis
-    container_name: redis
-    networks:
-      - superapp-network
-    ports:
-      - "6379:6379" 
-
-networks:
-  laravel:
 
 volumes:
   dbdata:
+

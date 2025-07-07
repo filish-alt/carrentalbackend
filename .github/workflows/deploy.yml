@@ -1,0 +1,78 @@
+name: Deploy Laravel App
+
+on:
+  push:
+    branches:
+      - development  # your deploy branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 1234
+          POSTGRES_DB: superapp
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          extensions: mbstring, pdo, pgsql, tokenizer, xml, curl, zip
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-progress --no-interaction --prefer-dist
+
+      - name: Create .env file for CI
+        run: |
+          echo "APP_NAME=Laravel" > .env
+          echo "APP_ENV=local" >> .env
+          echo "APP_KEY=base64:+94NR+271ehDPJ1XxtsTlooLHDkX5rQyBYabLzFa8JE=" >> .env
+          echo "APP_DEBUG=true" >> .env
+          echo "APP_URL=http://127.0.0.1:8000" >> .env
+
+          echo "DB_CONNECTION=pgsql" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_DATABASE=superapp" >> .env
+          echo "DB_USERNAME=postgres" >> .env
+          echo "DB_PASSWORD=1234" >> .env
+
+          echo "CACHE_DRIVER=file" >> .env
+          echo "QUEUE_CONNECTION=sync" >> .env
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Run migrations
+        run: php artisan migrate --force
+
+      - name: Deploy to Production via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: 22
+          script: |
+            cd /root/super_app_backend
+            git pull origin development
+            composer install --no-dev --optimize-autoloader
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
