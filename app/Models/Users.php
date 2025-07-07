@@ -32,7 +32,7 @@ protected $fillable = [
     'driver_licence',
     'role',
     'status',
-    'adress',
+    'address',
     'city',
     'birth_date',
     'otp',

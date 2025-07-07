@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('owner_id')->constrained('users')->onDelete('cascade'); 
             $table->string('make');
             $table->string('model'); 
-            $table->string('vin')->unique();
-            $table->string('license_plate')->unique();
+            $table->string('vin')->unique()->nullable();
+            $table->string('license_plate')->unique()->nullable();
             $table->enum('status', ['pending', 'available', 'rented', 'pending_payment'])->default('pending');
             $table->decimal('price_per_day', 10, 2);
             $table->integer('seating_capacity');

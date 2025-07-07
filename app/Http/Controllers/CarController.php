@@ -154,7 +154,7 @@ class CarController extends Controller
             'model' => 'required|string',
             'vin'   => 'nullable|string|unique:cars,vin',
             'seating_capacity' => 'required|integer',
-            'license_plate' => 'required|string|unique:cars,license_plate',
+            'license_plate' => 'nullable|string|unique:cars,license_plate',
             'status' => 'required|string',
             'price_per_day' => 'required|numeric',
             'fuel_type' => 'required|string',
