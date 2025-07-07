@@ -78,68 +78,67 @@ public function updateProfilePicture(Request $request)
     }
 
     // Update user
-    public function updateUser(Request $request, $id)
-    {
-        $user = Users::find($id);
+  public function updateUser(Request $request, $id)
+{
+    $user = Users::find($id);
 
-        if (!$user) {
-            return response()->json(['message' => 'User not found.'], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'first_name'       => 'sometimes|required|string|max:255',
-            'middle_name'        => 'sometimes|required|string|max:255',
-            'last_name'        => 'sometimes|required|string|max:255',
-            'email'            => ['sometimes', 'required', 'email', Rule::unique('users')->ignore($user->id)],
-            'phone'            => ['sometimes', 'required', 'regex:/^(09|07)\d{8}$/', Rule::unique('users')->ignore($user->id)],
-            'password'         => 'nullable|string|min:6|confirmed',
-            'driver_liscence'  => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-            'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf',
-            'address'          => 'nullable|string|max:255',
-            'city'             => 'nullable|string|max:100',
-            'birth_Date'       => 'nullable|date',
-            'role'             => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-        
-        if ($request->hasFile('driver_liscence')) {
-        $driverLicenseFile = $request->file('driver_liscence');
-        $filename = uniqid() . '.' . $request->file('driver_liscence')->getClientOriginalExtension();
-        $path = $request->file('driver_liscence')->move(public_path('driver_licences'), $filename);
-        $user->driver_license = 'driver_liscence/' . $filename;
-        }
-
-        if ($request->hasFile('digital_id')) {
-             $digitalIdFile = $request->file('digital_id');
-            $filename = uniqid() . '.' . $digitalIdFile->getClientOriginalExtension();
-            $digitalIdFile->move(public_path('digital_ids'), $filename);
-            $user->digital_id = 'digital_ids/' . $filename;
-        }
-        
-      
-            
-             
-        $user->first_name = $request->first_name ?? $user->first_name;
-        $user->middle_name = $request->middle_name ?? $user->middle_name;
-        $user->last_name = $request->last_name ?? $user->last_name;
-        $user->email = $request->email ?? $user->email;
-        $user->phone = $request->phone ?? $user->phone;
-        $user->address = $request->address ?? $user->address;
-        $user->city = $request->city ?? $user->city;
-        $user->birth_Date = $request->birth_Date ?? $user->birth_Date;
-        $user->role = $request->role ?? $user->role;
-        
-
-        $user->save();
-
-        return response()->json([
-            'message' => 'User updated successfully.',
-            'user' => $user,
-        ]);
+    if (!$user) {
+        return response()->json(['message' => 'User not found.'], 404);
     }
+
+    $validator = Validator::make($request->all(), [
+        'first_name'       => 'sometimes|required|string|max:255',
+        'middle_name'      => 'sometimes|required|string|max:255',
+        'last_name'        => 'sometimes|required|string|max:255',
+        'email'            => ['sometimes', 'required', 'email', Rule::unique('users')->ignore($user->id)],
+        'phone'            => ['sometimes', 'required', 'regex:/^(09|07)\d{8}$/', Rule::unique('users')->ignore($user->id)],
+        'password'         => 'nullable|string|min:6|confirmed',
+        'driver_licence'   => 'nullable|file|mimes:jpg,jpeg,png,pdf',
+        'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf',
+        'address'          => 'nullable|string|max:255',
+        'city'             => 'nullable|string|max:100',
+        'birth_date'       => 'nullable|date',
+        'role'             => 'nullable|string',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
+
+    // Handle file uploads
+    if ($request->hasFile('driver_licence')) {
+        $file = $request->file('driver_licence');
+        $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path('driver_licences'), $filename);
+        $user->driver_licence = 'driver_licences/' . $filename;
+    }
+
+    if ($request->hasFile('digital_id')) {
+        $file = $request->file('digital_id');
+        $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path('digital_ids'), $filename);
+        $user->digital_id = 'digital_ids/' . $filename;
+    }
+   Log::info('Incoming request:', $request->all());
+
+    // Update only if present
+    foreach ([
+        'first_name', 'middle_name', 'last_name', 'email', 'phone',
+        'address', 'city', 'birth_date', 'role'
+    ] as $field) {
+        if ($request->has($field)) {
+            $user->$field = $request->$field;
+        }
+    }
+
+    $user->save();
+
+    return response()->json([
+        'message' => 'User updated successfully.',
+        'user' => $user,
+    ]);
+}
+
 
     public function verify2FA(Request $request)
     {
