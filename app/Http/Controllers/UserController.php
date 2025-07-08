@@ -109,16 +109,17 @@ public function updateProfilePicture(Request $request)
     if ($request->hasFile('driver_licence')) {
         $file = $request->file('driver_licence');
         $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-        $file->move(public_path('driver_licences'), $filename);
+        $file->move(base_path('../public_html/driver_licences'), $filename);
         $user->driver_licence = 'driver_licences/' . $filename;
     }
 
     if ($request->hasFile('digital_id')) {
         $file = $request->file('digital_id');
         $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-        $file->move(public_path('digital_ids'), $filename);
+        $file->move(base_path('../public_html/digital_ids'), $filename);
         $user->digital_id = 'digital_ids/' . $filename;
     }
+
    Log::info('Incoming request:', $request->all());
 
     // Update only if present
