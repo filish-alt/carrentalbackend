@@ -106,23 +106,35 @@ public function updateProfilePicture(Request $request)
     }
 
     // Handle file uploads
-    if ($request->hasFile('driver_licence')) {
-        $file = $request->file('driver_licence');
-        $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-        $file->move(base_path('../public_html/driver_licences'), $filename);
-        $user->driver_licence = 'driver_licences/' . $filename;
-    }
+   
 
-    if ($request->hasFile('digital_id')) {
-        $file = $request->file('digital_id');
-        $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-        $file->move(base_path('../public_html/digital_ids'), $filename);
-        $user->digital_id = 'digital_ids/' . $filename;
-    }
+      if ($request->hasFile('driver_licence')) {
+            $file = $request->file('driver_licence');
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move(base_path('../public_html/driver_licences'), $filename);
+            $user->driver_licence = 'driver_licences/' . $filename;
+        }
 
-   Log::info('Incoming request:', $request->all());
+        if ($request->hasFile('digital_id')) {
+            $file = $request->file('digital_id');
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move(base_path('../public_html/digital_ids'), $filename);
+            $user->digital_id = 'digital_ids/' . $filename;
+        }
 
-    // Update only if present
+        if ($request->hasFile('passport')) {
+            $file = $request->file('passport');
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move(base_path('../public_html/passport'), $filename);
+            $user->passport = 'passport/' . $filename;
+        }
+        
+        $driverLiscenceUrl = $user->driver_licence ? url($user->driver_licence) : null;
+        $digitalIdUrl = $user->digital_id ? url($user->digital_id) : null;
+        $passportUrl = $user->passport ? url($user->passport) : null;
+
+        Log::info('Incoming request:', $request->all());
+
     foreach ([
         'first_name', 'middle_name', 'last_name', 'email', 'phone',
         'address', 'city', 'birth_date', 'role'
@@ -135,9 +147,13 @@ public function updateProfilePicture(Request $request)
     $user->save();
 
     return response()->json([
-        'message' => 'User updated successfully.',
-        'user' => $user,
-    ]);
+                'message' => 'User updated successfully.',
+                'user' => $user,
+                'driver_licence_url' => $user->driver_licence ? url($user->driver_licence) : null,
+                'digital_id_url' => $user->digital_id ? url($user->digital_id) : null,
+                'passport_url' => $user->passport ? url($user->passport) : null,
+            ]);
+
 }
 
 
