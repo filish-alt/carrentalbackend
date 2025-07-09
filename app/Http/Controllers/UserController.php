@@ -108,8 +108,8 @@ public function updateProfilePicture(Request $request)
     // Handle file uploads
    
 
-      if ($request->hasFile('driver_licence')) {
-            $file = $request->file('driver_licence');
+       if ($request->hasFile('driver_liscence')) {
+            $file = $request->file('driver_liscence');
             $filename = uniqid() . '.' . $file->getClientOriginalExtension();
             $file->move(base_path('../public_html/driver_licences'), $filename);
             $user->driver_licence = 'driver_licences/' . $filename;
@@ -149,9 +149,11 @@ public function updateProfilePicture(Request $request)
     return response()->json([
                 'message' => 'User updated successfully.',
                 'user' => $user,
-                'driver_licence_url' => $user->driver_licence ? url($user->driver_licence) : null,
-                'digital_id_url' => $user->digital_id ? url($user->digital_id) : null,
-                'passport_url' => $user->passport ? url($user->passport) : null,
+                'document_urls' => [
+                            'driver_licence' => $user->driver_licence ? url($user->driver_licence) : null,
+                            'digital_id' => $user->digital_id ? url($user->digital_id) : null,
+                            'passport' => $user->passport ? url($user->passport) : null,
+                        ],
             ]);
 
 }
