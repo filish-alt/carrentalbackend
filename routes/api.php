@@ -114,7 +114,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('homes/{id}/approve', [HomeController::class, 'approveHome']);
         Route::post('homes/{id}/reject', [HomeController::class, 'rejectHome']);
         Route::post('homes/{id}/block', [HomeController::class, 'blockHome']);
-        Route::get('admin/audits', [AuditController::class, 'index']); 
+        Route::get('admin/audits', [AuditController::class, 'index']);
+        Route::delete('admin/review/{id}', [ReviewController::class, 'destroy']);
     });
   
 

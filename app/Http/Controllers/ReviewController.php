@@ -65,5 +65,17 @@ public function reviewsForMyCars()
     return response()->json(['reviews' => $reviews]);
 }
 
+public function destroy($id)
+{
+    $review = Review::find($id);
+
+    if (!$review) {
+        return response()->json(['message' => 'Review not found'], 404);
+    }
+
+    $review->delete();
+
+    return response()->json(['message' => 'Review deleted successfully']);
+}
 
 }
