@@ -148,7 +148,7 @@ class CarController extends Controller
             'location_long' => 'nullable|numeric',
             'pickup_location' => 'nullable|string',
             'return_location' => 'nullable|string',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:5120',
             'listing_type' => 'required|in:rent,sell,both',
             'sell_price' => 'nullable|numeric',
             'is_negotiable' => 'nullable',

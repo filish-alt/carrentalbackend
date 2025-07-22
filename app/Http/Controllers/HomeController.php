@@ -44,7 +44,7 @@ class HomeController extends Controller
             'amenities' => 'nullable|array',
             'check_in_time' => 'nullable',
             'check_out_time' => 'nullable',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:5120',
             'furnished' => 'nullable|in:furnished,semi-furnished,unfurnished',
             'area_sqm' => 'nullable|numeric',
             'seating_capacity' => 'nullable|integer',
