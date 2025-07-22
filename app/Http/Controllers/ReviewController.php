@@ -3,79 +3,81 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Review;
+use App\Services\ReviewService;
 use App\Models\Car;
 
 class ReviewController extends Controller
 {
+    protected $reviewService;
+
+    public function __construct(ReviewService $reviewService)
+    {
+        $this->reviewService = $reviewService;
+    }
 
 public function store(Request $request)
 {
-    $request->validate([
+    $data = $request->validate([
         'car_id' => 'required|exists:cars,id',
         'rating' => 'required|integer|min:1|max:5',
         'review_text' => 'required|string|max:1000',
     ]);
 
-    $review = Review::create([
-        'user_id' => auth()->id(),
-        'car_id' => $request->car_id,
-        'rating' => $request->rating,
-        'review_text' => $request->review_text,
-    ]);
-
-    return response()->json(['message' => 'Review created successfully', 'review' => $review], 201);
+    try {
+        $result = $this->reviewService->createReview($data);
+        return response()->json($result, 201);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 400);
+    }
 }
-//get all reviews
+
 public function index()
 {
-    $reviews = Review::with(['user', 'car'])->get();
-
+    $reviews = $this->reviewService->getAllReviews();
     return response()->json(['reviews' => $reviews]);
 }
 
-//get review for specific car
 public function reviewsForCar(Car $car)
 {
-    $reviews = Review::where('car_id', $car->id)
-        ->with(['user', 'car'])
-        ->get();
-
-    return response()->json(['reviews' => $reviews]);
+    $result = $this->reviewService->getReviewsForCar($car->id);
+    return response()->json($result);
 }
 
-//get review given by the authenticated user
 public function myReviews()
 {
-    $reviews = Review::where('user_id', auth()->id())->with('car')->get();
-
+    $reviews = $this->reviewService->getUserReviews();
     return response()->json(['reviews' => $reviews]);
 }
 
-
-// Get all reviews for cars owned by the current user
 public function reviewsForMyCars()
 {
-    $userId = auth()->id();
-
-    $reviews = Review::whereHas('car', function ($query) use ($userId) {
-        $query->where('owner_id', $userId);
-    })->with(['user', 'car'])->get();
-
+    $reviews = $this->reviewService->getReviewsForUserCars();
     return response()->json(['reviews' => $reviews]);
 }
 
 public function destroy($id)
 {
-    $review = Review::find($id);
-
-    if (!$review) {
-        return response()->json(['message' => 'Review not found'], 404);
+    try {
+        $result = $this->reviewService->deleteReview($id);
+        return response()->json($result);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 404);
     }
+}
 
-    $review->delete();
+public function update(Request $request, $id)
+{
+    $data = $request->validate([
+        'rating' => 'required|integer|min:1|max:5',
+        'review_text' => 'required|string|max:1000',
+    ]);
 
-    return response()->json(['message' => 'Review deleted successfully']);
+    try {
+        $result = $this->reviewService->updateReview($data, $id);
+        return response()->json($result);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 404);
+    }
 }
 
 }

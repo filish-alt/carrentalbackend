@@ -3,71 +3,72 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\GeneralInfo;
-use App\Models\Faq;
-use App\Models\LandingSection;
+use App\Services\LandingContentService;
 
 class LandingContentController extends Controller
 {
+    protected $landingContentService;
+
+    public function __construct(LandingContentService $landingContentService)
+    {
+        $this->landingContentService = $landingContentService;
+    }
     // =======================
     // 🔹 GENERAL INFO
     // =======================
 
     public function setGeneralInfo(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'key' => 'required|string',
             'value' => 'required|string',
         ]);
 
-        $info = GeneralInfo::updateOrCreate(
-            ['key' => $request->key],
-            ['value' => $request->value]
-        );
-
-        return response()->json(['message' => 'Created/Updated', 'data' => $info]);
+        try {
+            $result = $this->landingContentService->setGeneralInfo($data);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
     }
 
     public function updateGeneralInfo(Request $request, $key)
     {
-        $request->validate([
+        $data = $request->validate([
             'value' => 'required|string',
         ]);
 
-        $info = GeneralInfo::where('key', $key)->first();
-
-        if (! $info) {
-            return response()->json(['message' => 'Key not found'], 404);
+        try {
+            $result = $this->landingContentService->updateGeneralInfo($data, $key);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 404);
         }
-
-        $info->value = $request->value;
-        $info->save();
-
-        return response()->json(['message' => 'Updated', 'data' => $info]);
     }
 
     public function getGeneralInfo($key)
     {
-        $info = GeneralInfo::where('key', $key)->first();
-        return response()->json($info ?? ['message' => 'Key not found'], $info ? 200 : 404);
+        try {
+            $info = $this->landingContentService->getGeneralInfo($key);
+            return response()->json($info);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 404);
+        }
     }
 
     public function listGeneralInfo()
     {
-        return response()->json(GeneralInfo::all());
+        return response()->json($this->landingContentService->listGeneralInfo());
     }
 
     public function deleteGeneralInfo($key)
     {
-        $info = GeneralInfo::where('key', $key)->first();
-
-        if (! $info) {
-            return response()->json(['message' => 'Key not found'], 404);
+        try {
+            $result = $this->landingContentService->deleteGeneralInfo($key);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 404);
         }
-
-        $info->delete();
-
-        return response()->json(['message' => 'Deleted']);
     }
 
     // =======================

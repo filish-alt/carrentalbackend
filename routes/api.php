@@ -105,12 +105,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/homes/{id}', [HomeController::class, 'update']);     // Update home by ID 
     Route::delete('/homes/{id}', [HomeController::class, 'destroy']);
 
+    Route::get('/listing-fees', [ListingFeeController::class, 'index']);
+    Route::get('/listing-fees/{id}', [ListingFeeController::class, 'show']);
+
     Route::middleware(['App\Http\Middleware\AdminMiddleware'])->group(function () {
         Route::get('/users/by-type', [AdminController::class, 'usersByType']);
         Route::get('/permissions', [RoleController::class, 'index']);
         Route::post('/createrole', [RoleController::class, 'createRole']);
         Route::post('/assignRole', [RoleController::class, 'assignRole']);
-        Route::apiResource('listing-fees', ListingFeeController::class);
+       
+        Route::post('/listing-fees', [ListingFeeController::class, 'store']);
+       
+        Route::put('/listing-fees', [ListingFeeController::class, 'update']);
+        Route::delete('/listing-fees', [ListingFeeController::class, 'destroy']);
+
         Route::post('homes/{id}/approve', [HomeController::class, 'approveHome']);
         Route::post('homes/{id}/reject', [HomeController::class, 'rejectHome']);
         Route::post('homes/{id}/block', [HomeController::class, 'blockHome']);

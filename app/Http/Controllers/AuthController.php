@@ -3,79 +3,22 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Users;
 use App\Models\SuperAdmin;
 use Illuminate\Validation\Rule;
-
-
-
-use Illuminate\Support\Facades\Redis;
-
-use Illuminate\Support\Facades\Mail;
-
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
-
-
+use App\Services\AuthService;
 
 class AuthController extends Controller
 {
-    public function sendOtp($phone, $otp) {
-        try {
-            // Replace phone prefix
-            if (str_starts_with($phone, '09')) {
-                $phone = '2519' . substr($phone, 2);
-            } elseif (str_starts_with($phone, '07')) {
-                $phone = '2517' . substr($phone, 2);
-            }
-    
-            Log::info("Attempting to send OTP to phone: {$phone}");
-    
-            $response = Http::asForm()->post('https://api.geezsms.com/api/v1/sms/send', [
-                'token' => 'iE0L4t06lOKr3u2AmzFQ3d4nXe2DZpeC',
-                'phone' => $phone,
-                'msg'   => "Dear user, your OTP is: {$otp} It will expire in 5 minutes. Thank you!",
-            ]);
-    
-            Log::info("SMS API Response:", ['response' => $response->json()]);
-    
-            $apiResponse = $response->json();
-            if ($response->failed() || (isset($apiResponse['error']) && $apiResponse['error'])) { 
-                Log::error('Failed to send OTP via SMS', [
-                    'status' => $response->status(),
-                    'response' => $apiResponse
-                ]);
-                return [
-                    'success' => false,
-                    'message' => 'Failed to send OTP. Please try again later.',
-                    'api_response' => $apiResponse
-                ];
-            }
-    
-            // Return success response
-            return [
-                'success' => true,
-                'message' => 'OTP sent successfully',
-                'api_response' => $apiResponse
-            ];
-    
-        } catch (\Exception $e) {
-            Log::error('Error occurred while sending OTP via SMS', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return [
-                'success' => false,
-                'message' => 'An error occurred while sending OTP. Please try again later.',
-                'error' => $e->getMessage()
-            ];
-        }
+    protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
     }
 /**
  * @OA\Post(
@@ -150,88 +93,16 @@ class AuthController extends Controller
             'role'             => 'nullable',
         ]);
 
-        
         if ($validator->fails()) {
             return response()->json([
                 'errors' => $validator->errors()
             ], 422);
         }
 
-            $digitalIdPath = $request->file('digital_id')
-            ? $request->file('digital_id')->move(base_path('../public_html/digital_ids'), uniqid() . '.' 
-            . $request->file('digital_id')->getClientOriginalExtension())
-            : null;
-     
-            $driverLiscencePath = $request->file('driver_liscence')
-             ? $request->file('driver_liscence')->move(base_path('../public_html/driver_licences'), uniqid() . '.' 
-             . $request->file('driver_liscence')->getClientOriginalExtension())
-             : null;
-            
-              $passport = $request->file('passport')
-             ? $request->file('passport')->move(base_path('../public_html/passport'), uniqid() . '.' 
-             . $request->file('passport')->getClientOriginalExtension())
-             : null;
-
-             $driverLiscenceUrl = $driverLiscencePath ? url('driver_licences/' . basename($driverLiscencePath)) : null;
-            $digitalIdUrl = $digitalIdPath ? url('digital_ids/' . basename($digitalIdPath)) : null;
-            $passportUrl = $passport ? url('passport/' . basename($passport)) : null;
-         
-    $otp = rand(100000, 999999);
-
-    $sms_response = $this->sendOtp($request->phone, $otp);
-   
-
-    // Create user
-    $user = Users::create([
-        'first_name'      => $request->first_name,
-        'middle_name'     => $request->middle_name,
-        'last_name'       => $request->last_name,
-        'email'           => $request->email,
-        'phone'           => $request->phone,
-        'hash_password'   =>  Hash::make($request->password),
-        'digital_id'      => $digitalIdPath,
-        'passport'        => $passport,
-        'driver_licence' => $driverLiscencePath,
-        'address'         => $request->address,
-        'city'            => $request->city,
-        'birth_Date'      => $request->birth_date,
-        'role'            => 'User',
-        'status'          => 'Pending',
-        'otp'             => $otp,
-        'otp_expires_at'  => now()->addMinutes(5),
-    ]);
-
-    // Send OTP to email
-    if ($user->email) {
-        Mail::raw("Your registration OTP is: $otp", function ($message) use ($user) {
-            $message->to($user->email)
-                    ->subject('Account Verification OTP');
-        });
+        $result = $this->authService->register($request->all(), $request);
+        
+        return response()->json($result, 201);
     }
-    
-    // Simulate sending OTP 
-    Log::info("OTP for {$user->phone}: {$otp}");
-    
-    return response()->json([
-        'message' => 'User registered successfully.',
-        'user' => [
-            'id' => $user->id,
-            'first_name' => $user->first_name,
-            'middle_name' => $user->middle_name,
-            'last_name' => $user->last_name,
-            'email' => $user->email,
-            'phone' => $user->phone,
-            'driver_licence' => $driverLiscenceUrl,
-            'digital_id' => $digitalIdUrl,
-            'passport' => $passportUrl,
-            'address' => $user->address,
-            'city' => $user->city,
-            'birth_date' => $user->birth_date,
-            'status' => $user->status,
-           ],
-        'sms_response' => $sms_response
-    ], 201);
-}
         
 /**
  * @OA\Post(
@@ -264,22 +135,15 @@ public function verifyPhoneOtp(Request $request)
         'otp'   => 'required|string|size:6',
     ]);
 
-    $user = Users::where('phone', $request->phone)
-        ->where('otp', $request->otp)
-        ->where('otp_expires_at', '>', now())
-        ->first();
+    $result = $this->authService->verifyPhoneOtp($request->phone, $request->otp);
 
-    if (!$user) {
-        return response()->json(['message' => 'Invalid or expired OTP.'], 400);
+    if (!$result['success']) {
+        return response()->json(['message' => $result['message']], 400);
     }
 
-    $user->otp = null;
-    $user->otp_expires_at = null;
-    $user->save();
-
     return response()->json([
-        'message' => 'Phone number verified successfully.',
-        'user' => $user,
+        'message' => $result['message'],
+        'user' => $result['user'],
     ]);
 }
 
@@ -290,22 +154,15 @@ public function verifyEmailOtp(Request $request)
         'otp'   => 'required|string|size:6',
     ]);
 
-    $user = Users::where('email', $request->email)
-        ->where('otp', $request->otp)
-        ->where('otp_expires_at', '>', now())
-        ->first();
+    $result = $this->authService->verifyEmailOtp($request->email, $request->otp);
 
-    if (!$user) {
-        return response()->json(['message' => 'Invalid or expired OTP.'], 400);
+    if (!$result['success']) {
+        return response()->json(['message' => $result['message']], 400);
     }
 
-    $user->otp = null;
-    $user->otp_expires_at = null;
-    $user->save();
-
     return response()->json([
-        'message' => 'Email verified successfully.',
-        'user' => $user,
+        'message' => $result['message'],
+        'user' => $result['user'],
     ]);
 }
 
@@ -362,112 +219,55 @@ public function login(Request $request)
     Log::info('=== Incoming Request ===');
     Log::info($request->all());
 
-    $user = null;
-    $userType = '';
-   
-    $loginInput = $request->email;
-    $isEmail = filter_var($loginInput, FILTER_VALIDATE_EMAIL);
+    $result = $this->authService->login($request->email, $request->password);
 
-    $adminQuery = SuperAdmin::query();
-    // Check if SuperAdmin
-    $admin = $isEmail
-        ? $adminQuery->where('email', $loginInput)->first()
-        : $adminQuery->where('phone', $loginInput)->first();
-
-    if ($admin && Hash::check($request->password, $admin->hash_password)) {
-        $user = $admin;
-        $userType = 'admin';
-    }
-
-    // Check if regular User (only if no admin match)
-     $userQuery = Users::query();
-     $normalUser = $isEmail
-        ? $userQuery->where('email', $loginInput)->first()
-        : $userQuery->where('phone', $loginInput)->first();
-
-        if ($normalUser && Hash::check($request->password, $normalUser->hash_password)) {
-            $user = $normalUser;
-            $userType = 'user';
-        }
-    
-
-    
-    if (!$user) {
-        Log::warning('Invalid login credentials', ['email' => $request->email]);
-        return response()->json(['message' => 'Invalid credentials.'], 401);
-    }
-
-    // 2FA & OTP checks for normal users
-    if ($userType === 'user') {
-        if ($user->otp && $user->otp_expires_at) {
-            return response()->json(['message' => 'Phone number not verified. Please enter the OTP sent to your phone.'], 403);
-        }
-
-        if ($user->two_factor_enabled) {
-            $otp = rand(100000, 999999);
-
-            // Save OTP temporarily in Redis
-            //Redis::setex("2fa:{$user->id}", 300, $otp); // 5 minutes
-            $user->two_factor_code = $otp;
-            $user->two_factor_expires_at = now()->addMinutes(5);
-            $user->save();
-             // Send OTP via email and SMS
-          Mail::raw("Your two factor code is: $otp", function ($message) use ($user) {
-            $message->to($user->email)
-                    ->subject('Two factor Verification OTP');
-          });
-          
-            $this->sendOtp($user->phone, $otp);
-       
-            Log::info("2FA code sent: {$otp}");
-
+    if (!$result['success']) {
+        if (isset($result['two_factor_pending']) && $result['two_factor_pending']) {
             return response()->json([
-                'message' => 'Two-factor code sent',
+                'message' => $result['message'],
                 'two_factor_pending' => true,
-                'user_id' => $user->id,
-            ]);
+                'user_id' => $result['user_id']
+            ], 403);
         }
+        
+        Log::warning('Invalid login credentials', ['email' => $request->email]);
+        return response()->json(['message' => $result['message']], 401);
     }
-
-    // Issue new token
-    $token = $user->createToken('auth_token')->plainTextToken;
 
     return response()->json([
         'message' => 'Login successful',
-        'role' => $user->role ?? $userType,
-        'user' => $user,
-        'token' => $token,
+        'role' => $result['role'],
+        'user' => $result['user'],
+        'token' => $result['token'],
     ]);
 }
 
-public function logout(Request $request)
-{
-    $user = Auth::user();
-    if ($user) {
-        $user->tokens()->delete();
-        return response()->json(['message' => 'Logged out successfully.']);
-    }
-    return response()->json(['message' => 'User not found.'], 404);
-}
-
-public function updatePassword(Request $request)
-{
-    $request->validate([
-        'current_password' => 'required|string',
-        'new_password' => 'required|string|min:6|confirmed',
-    ]);
-
-    $user = Auth::user();
-    echo $user->name;
-    if (!Hash::check($request->current_password, $user->hash_password)) {
-        return response()->json(['message' => 'Current password is incorrect'], 403);
+    public function logout(Request $request)
+    {
+        $user = Auth::user();
+        if ($user) {
+            $result = $this->authService->logout($user);
+            return response()->json($result);
+        }
+        return response()->json(['message' => 'User not found.'], 404);
     }
 
-    $user->hash_password = Hash::make($request->new_password);
-    $user->save();
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:6|confirmed',
+        ]);
 
-    return response()->json(['message' => 'Password updated successfully']);
-}
+        $user = Auth::user();
+        $result = $this->authService->updatePassword($user, $request->current_password, $request->new_password);
+        
+        if (!$result['success']) {
+            return response()->json(['message' => $result['message']], 403);
+        }
+        
+        return response()->json(['message' => $result['message']]);
+    }
 
 }
 

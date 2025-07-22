@@ -2,22 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
-use App\Models\Car;
-use App\Models\CarImage;
-use App\Models\ListingFee;
-use App\Models\Platformpayment;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
-use Exception;
+use App\Services\CarService;
 use Illuminate\Support\Facades\Auth;
 
 
 
 class CarController extends Controller
 {
+    protected $carService;
+
+    public function __construct(CarService $carService)
+    {
+        $this->carService = $carService;
+    }
+
     /**
      * @OA\Get(
      *     path="/api/cars",
@@ -36,7 +35,7 @@ class CarController extends Controller
      */
     public function index()
     {
-        return Car::with('images')->get();
+        return $this->carService->getAllCars();
     }
 
     /**
@@ -63,13 +62,7 @@ class CarController extends Controller
      */
     public function myCars()
     {
-            $userId = auth()->id();
-
-            $cars = Car::with('images')
-                ->where('owner_id', $userId)
-                ->get();
-
-            return response()->json($cars);
+        return response()->json($this->carService->getUserCars());
     }
 
     /**
@@ -141,21 +134,13 @@ class CarController extends Controller
      */
     public function store(Request $request)
     {
-        $user = Auth::user();
-        if (Auth::check()) {
-            logger('User ID for auditing: ' . Auth::id());
-        } else {
-            logger('No authenticated user found for auditing.');
-        }
-
-        $request->validate([
+        $data = $request->validate([
             'owner_id' => 'required|integer',
-            'make'  =>  'required|string',
+            'make' => 'required|string',
             'model' => 'required|string',
-            'vin'   => 'nullable|string|unique:cars,vin',
+            'vin' => 'nullable|string|unique:cars,vin',
             'seating_capacity' => 'required|integer',
             'license_plate' => 'nullable|string|unique:cars,license_plate',
-            'status' => 'required|string',
             'price_per_day' => 'required|numeric',
             'fuel_type' => 'required|string',
             'transmission' => 'required|string',
@@ -164,8 +149,6 @@ class CarController extends Controller
             'pickup_location' => 'nullable|string',
             'return_location' => 'nullable|string',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-
-            // Sale fields
             'listing_type' => 'required|in:rent,sell,both',
             'sell_price' => 'nullable|numeric',
             'is_negotiable' => 'nullable',
@@ -174,136 +157,31 @@ class CarController extends Controller
             'condition' => 'nullable|string',
         ]);
 
-        DB::beginTransaction();
         try {
-            $car = Car::create([
-                'owner_id' => $request->owner_id,
-                'make' => $request->make,
-                'model' => $request->model,
-                'vin' => $request->vin,
-                'seating_capacity' => $request->seating_capacity,
-                'license_plate' => $request->license_plate,
-                'status' =>'pending',
-                'price_per_day' => $request->price_per_day,
-                'fuel_type' => $request->fuel_type,
-                'transmission' => $request->transmission,
-                'location_lat' => $request->location_lat ?? 8.9831,
-                'location_long' => $request->location_long ?? 38.8101,
-                'pickup_location' => $request->pickup_location,
-                'return_location' => $request->return_location,
-
-                // Sale fields
-                'listing_type' => $request->listing_type,
-                'sell_price' => $request->sell_price,
-                'is_negotiable' => $request->is_negotiable ?? false,
-                'mileage' => $request->mileage,
-                'year' => $request->year,
-                'condition' => $request->condition,
-            ]);
-
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $filename = time() . '_' . $image->getClientOriginalName();
-                    $destinationPath = base_path('../public_html/car_images');
-                    $image->move($destinationPath, $filename);
-
-                    CarImage::create([
-                        'car_id' => $car->id,
-                        'image_path' => 'car_images/' . $filename,
-                    ]);
-                }
-            }
-        $fee = ListingFee::where('item_type', 'car')
-            ->where('listing_type', $car->listing_type)
-            ->orderByDesc('id') // get the latest active fee
-            ->first();
-        // Generate tx_ref and save payment
-        $tx_ref = 'CARPOST-' . uniqid();
-    
-        if($fee && $fee->fee > 0 ) {
-          Platformpayment::create([
-            'item_id'=>$car->id,
-            'item_type'=>'car',
-            'amount' => $fee->fee,
-            'currency' => $fee->currency,
-            'payment_status' => 'pending',
-            'payment_method' => 'chapa',
-            'transaction_date' => now(),
-            'tx_ref' => $tx_ref,
-        ]);
-    
-    
-        DB::commit();
-        
-        $returnUrl = $request->header('Platform') === 'mobile'
-        ? url('/api/redirect/payment') . '?tx_ref=' . $tx_ref
-        : env('Payment_FRONTEND_RETURN_URL') . '?tx_ref=' . $tx_ref;
-
-        Log::info('Return URL', ['url' => $returnUrl]);
-
-        
-        $chapaData = [
-            'amount' => $fee->fee,
-            'currency' => 'ETB',
-            'email' => auth()->user()->email,
-            'first_name' => auth()->user()->first_name,
-            'phone_number' => auth()->user()->phone,
-            'tx_ref' => $tx_ref,
-            'callback_url' => url('/api/chapa/listing-callback'),
-            'return_url' => $returnUrl,
-            'customization' => [
-                'title' => 'Car Listing Fee',
-                'description' => 'Payment to publish your car listing.',
-            ],
-        ];
-     
-        Log::info('Chapa Listing Payment Data', $chapaData);
-
-        $response = Http::withToken(env('CHAPA_SECRET_KEY'))
-            ->post(env('CHAPA_BASE_URL') . '/transaction/initialize', $chapaData);
-
-        $data = $response->json();
-
-        if ($response->successful() && isset($data['data']['checkout_url'])) {
-            return response()->json([
-                'message' => 'Car created. Redirect to Chapa for payment.',
-                'checkout_url' => $data['data']['checkout_url'],
-            ]);
-        }
-
-        return response()->json(['error' => 'Unable to redirect to Chapa.'], 500);
-
-       }
-        DB::commit();
-        $car->load('images');
-        return response()->json([
-                'message' => 'Car created successfully. No payment required.',
-                'car' => $car,
-            ]);
-    } catch (\Exception $e) {
-            DB::rollBack();
+            $result = $this->carService->createCar($data, $request);
+            return response()->json($result);
+        } catch (\Exception $e) {
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
-        
-    
     }
 
     public function show($id)
     {
-        return Car::with('images')->findOrFail($id);
+        try {
+            return $this->carService->getCar($id);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        }
     }
 
     public function update(Request $request, $id)
     {
-        $user = Auth::user();
-        $car = Car::findOrFail($id);
-
-        $request->validate([
+        $data = $request->validate([
             'make' => 'sometimes|string',
             'model' => 'sometimes|string',
-            'vin' => 'nullable|string|unique:cars,vin,' . $car->id,
+            'vin' => 'nullable|string',
             'seating_capacity' => 'sometimes|integer',
-            'license_plate' => 'sometimes|string|unique:cars,license_plate,' . $car->id,
+            'license_plate' => 'sometimes|string',
             'status' => 'sometimes|string',
             'price_per_day' => 'sometimes|numeric',
             'fuel_type' => 'sometimes|string',
@@ -312,8 +190,6 @@ class CarController extends Controller
             'location_long' => 'nullable|numeric',
             'pickup_location' => 'nullable|string',
             'return_location' => 'nullable|string',
-
-            // Sale fields
             'listing_type' => 'sometimes|in:rent,sell,both',
             'sell_price' => 'nullable|numeric',
             'is_negotiable' => 'nullable|boolean',
@@ -322,109 +198,82 @@ class CarController extends Controller
             'condition' => 'nullable|string',
         ]);
 
-        $car->update($request->all());
-
-        return response()->json($car->fresh('images'));
+        try {
+            $car = $this->carService->updateCar($data, $id);
+            return response()->json($car);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        }
     }
 
     public function destroy($id)
     {
-        Car::destroy($id);
-        return response()->noContent();
+        try {
+            $this->carService->deleteCar($id);
+            return response()->noContent();
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 404);
+        }
     }
 
     public function search(Request $request)
     {
-        $query = Car::query();
-
-        if ($request->has('make')) {
-            $query->where('make', 'LIKE', '%' . $request->make . '%');
-        }
-
-        if ($request->has('model')) {
-            $query->where('model', 'LIKE', '%' . $request->model . '%');
-        }
-
-        if ($request->has('seating_capacity')) {
-            $query->where('seating_capacity', $request->seating_capacity);
-        }
-
-        if ($request->has('transmission')) {
-            $query->where('transmission', $request->transmission);
-        }
-
-        if ($request->has('listing_type')) {
-            $query->where('listing_type', $request->listing_type);
-        }
-
-        return response()->json($query->with('images')->get());
+        $filters = $request->only(['make', 'model', 'seating_capacity', 'transmission', 'listing_type']);
+        $cars = $this->carService->searchCars($filters);
+        return response()->json($cars);
     }
 
     public function getCarImages($carId)
     {
-        $car = Car::with('images')->find($carId);
-
-        if (!$car) {
-            return response()->json(['message' => 'Car not found'], 404);
+        try {
+            $result = $this->carService->getCarImages($carId);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 404);
         }
-
-        return response()->json([
-            'message' => 'Car images fetched successfully',
-            'images' => $car->images,
-        ]);
     }
 
     public function approveCar($id)
     {
-        $car = Car::find($id);
-        if (!$car) {
-            return response()->json(['message' => 'Car not found'], 404);
+        try {
+            $result = $this->carService->approveCar($id);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 404);
         }
-
-        $car->status = 'available';
-        $car->save();
-
-        return response()->json(['message' => 'Car listing approved']);
     }
+
     public function CarStatus(Request $request, $id)
-        {
-            $car = Car::find($id);
-            if (!$car) {
-                return response()->json(['message' => 'Car not found'], 404);
-            }
-            $request->validate([
-                'status' => 'required|string',
-            ]);
-            $car->status = $request->status;
-            $car->save();
+    {
+        $request->validate([
+            'status' => 'required|string',
+        ]);
 
-            return response()->json(['message' => 'Car listing status updated successfully', 'car' => $car]);
+        try {
+            $result = $this->carService->updateCarStatus($id, $request->status);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 404);
         }
-
+    }
 
     public function rejectCar($id)
     {
-        $car = Car::find($id);
-        if (!$car) {
-            return response()->json(['message' => 'Car not found'], 404);
+        try {
+            $result = $this->carService->rejectCar($id);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 404);
         }
-
-        $car->status = 'rejected';
-        $car->save();
-
-        return response()->json(['message' => 'Car listing rejected']);
     }
 
     public function blockCar($id)
     {
-        $car = Car::find($id);
-        if (!$car) {
-            return response()->json(['message' => 'Car not found'], 404);
+        try {
+            $result = $this->carService->blockCar($id);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 404);
         }
-
-        $car->status = 'blocked';
-        $car->save();
-
-        return response()->json(['message' => 'Car has been blocked']);
     }
 }

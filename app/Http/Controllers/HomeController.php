@@ -2,35 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Home;
-use App\Models\HomeImage;
-use App\Models\ListingFee;
-use App\Models\Platformpayment;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
+use App\Services\HomeService;
 use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
+    protected $homeService;
+
+    public function __construct(HomeService $homeService)
+    {
+        $this->homeService = $homeService;
+    }
     
     public function index()
     {
-        return Home::with('images')->get();
+        return $this->homeService->getAllHomes();
     }
 
     public function store(Request $request)
-    { 
-        $user = Auth::user();
-        if (Auth::check()) {
-            logger('User ID for auditing: ' . Auth::id());
-        } else {
-            logger('No authenticated user found for auditing.');
-        }
-        $request->validate([
+    {
+        $data = $request->validate([
             'owner_id' => 'required|integer|exists:users,id',
             'title' => 'required|string',
             'description' => 'nullable|string',
@@ -48,14 +40,11 @@ class HomeController extends Controller
             'bathrooms' => 'required|integer',
             'max_guests' => 'required|integer',
             'property_type' => 'required|string',
-            'status' => 'required|in:available,unavailable,approved,rejected,blocked',
             'listing_type' => 'required|in:rent,sell,both',
             'amenities' => 'nullable|array',
             'check_in_time' => 'nullable',
             'check_out_time' => 'nullable',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-
-            // New fields
             'furnished' => 'nullable|in:furnished,semi-furnished,unfurnished',
             'area_sqm' => 'nullable|numeric',
             'seating_capacity' => 'nullable|integer',
@@ -69,115 +58,10 @@ class HomeController extends Controller
             'property_purposes.*' => 'in:residential,office,business,store,celebration',
         ]);
 
-        DB::beginTransaction();
-
         try {
-            $home = Home::create([
-                'owner_id' => $request->owner_id,
-                'title' => $request->title,
-                'description' => $request->description,
-                'address' => $request->address,
-                'city' => $request->city,
-                'state' => $request->state,
-                'zip_code' => $request->zip_code,
-                'country' => $request->country,
-                'latitude' => $request->latitude ?? 0,
-                'longitude' => $request->longitude ?? 0,
-                'price_per_night' => $request->price_per_night,
-                'rent_per_month' => $request->rent_per_month,
-                'sell_price' => $request->sell_price,
-                'bedrooms' => $request->bedrooms,
-                'bathrooms' => $request->bathrooms,
-                'max_guests' => $request->max_guests,
-                'property_type' => $request->property_type,
-                'status' => 'payment_pending',
-                'listing_type' => $request->listing_type,
-                'amenities' => $request->amenities,
-                'check_in_time' => $request->check_in_time,
-                'check_out_time' => $request->check_out_time,
-
-                // New fields
-                'furnished' => $request->furnished,
-                'area_sqm' => $request->area_sqm,
-                'seating_capacity' => $request->seating_capacity,
-                'parking' => $request->parking,
-                'storage' => $request->storage,
-                'loading_zone' => $request->loading_zone,
-                'payment_frequency' => $request->payment_frequency,
-                'power_supply' => $request->power_supply,
-                'kitchen' => $request->kitchen,
-                'property_purposes' => $request->property_purposes,
-            ]);
-
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $filename = time() . '_' . $image->getClientOriginalName();
-                    $destinationPath = base_path('../public_html/home_images');
-                    $image->move($destinationPath, $filename);
-
-                    HomeImage::create([
-                        'home_id' => $home->id,
-                        'image_path' => 'home_images/' . $filename,
-                    ]);
-                }
-            }
-
-        $tx_ref = 'HOMEPOST-' . uniqid();
-        $fee = ListingFee::where('item_type', 'home')
-            ->where('listing_type', $home->listing_type)
-            ->orderByDesc('id') // get the latest active fee
-            ->first();
-        if($fee) {
-          Platformpayment::create([
-            'item_id'=>$home->id,
-            'item_type'=>'home',
-            'amount' => $fee->fee, 
-            'currency' => $fee->currency,
-            'payment_status' => 'pending',
-            'payment_method' => 'chapa',
-            'transaction_date' => now(),
-            'tx_ref' => $tx_ref,
-        ]);
-    }
-    
-        DB::commit();
-        
-      $returnUrl = $request->header('Platform') === 'mobile'
-            ? url('/api/redirect/payment') . '?tx_ref=' . $tx_ref
-            : env('Payment_FRONTEND_RETURN_URL') . '?tx_ref=' . $tx_ref;
-
-        $chapaData = [
-            'amount' => $fee->fee,
-            'currency' => 'ETB',
-            'email' => auth()->user()->email,
-            'first_name' => auth()->user()->first_name,
-            'phone_number' => auth()->user()->phone,
-            'tx_ref' => $tx_ref,
-            'callback_url' => url('/api/chapa/listing-callback'),
-            'return_url' => $returnUrl,
-            'customization' => [
-                'title' => 'Home Listing Fee',
-                'description' => 'Payment to publish your home listing.',
-            ],
-        ];
-     
-        Log::info('Chapa Listing Payment Data', $chapaData);
-
-        $response = Http::withToken(env('CHAPA_SECRET_KEY'))
-            ->post(env('CHAPA_BASE_URL') . '/transaction/initialize', $chapaData);
-
-        $data = $response->json();
-
-        if ($response->successful() && isset($data['data']['checkout_url'])) {
-            return response()->json([
-                'message' => 'Home created. Redirect to Chapa for payment.',
-                'checkout_url' => $data['data']['checkout_url'],
-            ]);
-        }
-
-        return response()->json(['error' => 'Unable to redirect to Chapa.'], 500);
+            $result = $this->homeService->createHome($data, $request);
+            return response()->json($result);
         } catch (\Exception $e) {
-            DB::rollBack();
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
     }

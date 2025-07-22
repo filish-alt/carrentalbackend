@@ -2,13 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use App\Models\Payment;
-use App\Models\Platformpayment;
 use Illuminate\Http\Request;
-use App\Models\Car;
-use App\Models\Home;
+use App\Services\PaymentService;
 
 
 /**
@@ -19,6 +14,13 @@ use App\Models\Home;
  */
 class PaymentController extends Controller
 {
+    protected $paymentService;
+
+    public function __construct(PaymentService $paymentService)
+    {
+        $this->paymentService = $paymentService;
+    }
+
     /**
      * @OA\Get(
      *     path="/api/chapa/callback",
@@ -57,98 +59,63 @@ class PaymentController extends Controller
      * )
      */
     public function handleCallback(Request $request)
-{
-    $tx_ref = $request->query('tx_ref');
-
-    if (!$tx_ref) {
-        return response()->json(['error' => 'Transaction reference is missing'], 400);
-    }
-
-    $response = Http::withToken(env('CHAPA_SECRET_KEY'))
-        ->get(env('CHAPA_BASE_URL') . "/transaction/verify/{$tx_ref}");
-
-    if ($response->successful() && $response->json('data.status') === 'success') {
-        // Update payment record
-        $payment = Payment::where('tx_ref', $tx_ref)->first();
-
-        if ($payment) {
-            $payment->update(['payment_status' => 'paid']);
-
-            $payment->booking->update(['status' => 'confirmed']);
-
-            return response()->json(['sucess' => 'Payment sucessfully'], 200);
+    {
+        try {
+            $result = $this->paymentService->handleCallback($request->query('tx_ref'));
+            return response()->json($result, 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 400);
         }
-
-        return response()->json(['error' => 'Payment not found'], 404);
     }
-
-    return response()->json(['error' => 'Payment verification failed'], 400);
-}
 
 public function listingCallback(Request $request)
-{
-    $tx_ref = $request->query('tx_ref');
-
-    $payment = Platformpayment::where('tx_ref', $tx_ref)->first();
-    if (!$payment) return response()->json(['error' => 'Listing payment not found'], 404);
-
-    $verify = Http::withToken(env('CHAPA_SECRET_KEY'))
-        ->get(env('CHAPA_BASE_URL') . '/transaction/verify/' . $tx_ref);
-
-    if ($verify->successful() && $verify->json('data.status') === 'success') {
-        $payment->update(['payment_status' => 'successful']);
-       
-        
-        // Update item status (car or home)
-        $item = $payment->item;
-        if ($item instanceof Car || $item instanceof Home) {
-            $item->update(['status' => 'available']);
+    {
+        try {
+            $result = $this->paymentService->handleListingCallback($request->query('tx_ref'));
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 400);
         }
-
-        
-
-        return response()->json(['message' => 'Listing payment confirmed']);
     }
 
-    return response()->json(['error' => 'Payment verification failed'], 400);
-}
-
-public function handleRedirect(Request $request)
+    public function handleRedirect(Request $request)
     {
-        $txRef = $request->query('tx_ref');
-
-        if (!$txRef) {
-            return response('Invalid request', 400);
+        try {
+            $redirectUrl = $this->paymentService->handleRedirect($request->query('tx_ref'));
+            return redirect()->away($redirectUrl);
+        } catch (\Exception $e) {
+            return response($e->getMessage(), $e->getCode() ?: 400);
         }
-
-        $payment = PlatformPayment::where('tx_ref', $txRef)->first();
-
-        if (!$payment) {
-            return response('Payment not found', 404);
-        }
-
-
-        // Redirect to your mobile app
-        return redirect()->away('myapp://platformpayment?tx_ref=' . $txRef);
     }
 
     public function handleRedirectForBooking(Request $request)
     {
-        $txRef = $request->query('tx_ref');
-
-        if (!$txRef) {
-            return response('Invalid request', 400);
+        try {
+            $redirectUrl = $this->paymentService->handleBookingRedirect($request->query('tx_ref'));
+            return redirect()->away($redirectUrl);
+        } catch (\Exception $e) {
+            return response($e->getMessage(), $e->getCode() ?: 400);
         }
+    }
 
-        $payment = Payment::where('tx_ref', $txRef)->first();
-
-        if (!$payment) {
-            return response('Payment not found', 404);
+    public function verifyPayment($tx_ref)
+    {
+        try {
+            $result = $this->paymentService->verifyPayment($tx_ref);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
         }
+    }
 
-
-        // Redirect to your mobile app
-        return redirect()->away('myapp://payment-return?tx_ref=' . $txRef);
+    public function getPaymentStatus($tx_ref)
+    {
+        try {
+            $result = $this->paymentService->getPaymentStatus($tx_ref);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 404);
+        }
     }
 
 

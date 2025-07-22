@@ -3,34 +3,37 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Users;
+use App\Services\AdminService;
 use Illuminate\Http\JsonResponse;
 
 class AdminController extends Controller
 {
-    //Admin see soft delte users
+    protected $adminService;
+
+    public function __construct(AdminService $adminService)
+    {
+        $this->adminService = $adminService;
+    }
+
     public function listDeletedUsers()
     {
-        $deletedUsers = Users::onlyTrashed()->get();
-        return response()->json($deletedUsers);
+        $users = $this->adminService->listDeletedUsers();
+        return response()->json($users);
     }
+
     public function forceDeleteUser($id)
     {
-        $user = Users::onlyTrashed()->where('id', $id)->firstOrFail();
-        $user->forceDelete(); 
-
+        $this->adminService->forceDeleteUser($id);
         return response()->json(['message' => 'User permanently deleted.']);
     }
-//admin verify user ststus 
-    public function verifyUser(Request $request,$id)
+
+    public function verifyUser(Request $request, $id)
     {
         $request->validate([
             'status' => 'required|in:Approved,Rejected',
         ]);
 
-        $user = Users::findOrFail($id);
-        $user->status = $request->status;
-        $user->save();
+        $user = $this->adminService->verifyUser($id, $request->status);
 
         return response()->json([
             'message' => 'User status updated successfully.',
@@ -38,50 +41,28 @@ class AdminController extends Controller
         ]);
     }
 
-  
-public function getUsersByStatus($status)
-{
-    $validStatuses = ['Pending', 'Approved','Rejected']; 
+    public function getUsersByStatus($status)
+    {
+        $validStatuses = ['Pending', 'Approved', 'Rejected'];
+        if (!in_array($status, $validStatuses)) {
+            return response()->json(['error' => 'Invalid status'], 400);
+        }
 
-    if (!in_array($status, $validStatuses)) {
-        return response()->json(['error' => 'Invalid status'], 400);
+        $users = $this->adminService->getUsersByStatus($status);
+        return response()->json(['status' => $status, 'users' => $users]);
     }
 
-    $users = Users::where('status', $status)->get();
+    public function usersByType(Request $request): JsonResponse
+    {
+        $type = $request->query('type');
+        $users = $this->adminService->getUsersByType($type);
 
-    return response()->json([
-        'status' => $status,
-        'users' => $users,
-    ]);
-}
-
-public function usersByType(Request $request): JsonResponse
-{
-    $type = $request->query('type');
-
-    switch ($type) {
-        case 'owner':
-            $users = Users::whereHas('cars')->get();
-            break;
-
-        case 'renter':
-            $users = Users::whereHas('bookings')->get();
-            break;
-
-        case 'both':
-            $users = Users::whereHas('cars')->whereHas('bookings')->get();
-            break;
-
-        default:
+        if ($users === null) {
             return response()->json([
                 'message' => 'Invalid or missing type. Use "owner", "renter", or "both".'
             ], 400);
+        }
+
+        return response()->json(['users' => $users, 'type' => $type]);
     }
-
-    return response()->json([
-        'users' => $users,
-        'type' => $type,
-    ]);
-}
-
 }

@@ -2,64 +2,61 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Notification;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     // Get notifications by user ID
     public function getByUserId($userId)
     {
-        $notifications = Notification::where('user_id', $userId)
-                                     ->latest()
-                                     ->get();
+        $notifications = $this->notificationService->getNotificationsByUserId($userId);
+
         return response()->json($notifications);
     }
 
-    // Optional: Create new notification
+    // Create new notification
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'user_id' => 'required|exists:users,id',
             'title' => 'required|string|max:255',
             'message' => 'required|string',
         ]);
 
-        $notification = Notification::create([
-            'user_id' => $request->user_id,
-            'title' => $request->title,
-            'message' => $request->message,
-        ]);
+        $notification = $this->notificationService->createNotification($data);
 
         return response()->json($notification, 201);
     }
 
-    // Optional: Mark as read
+    // Mark a single notification as read
     public function markAsRead($id)
     {
-        $notification = Notification::findOrFail($id);
-        $notification->update([
-            'is_read' => true,
-            'read_at' => now(),
-        ]);
+        $notification = $this->notificationService->markAsRead($id);
 
         return response()->json($notification);
     }
 
-    // Optional: Delete notification
+    // Delete a notification
     public function destroy($id)
     {
-        $notification = Notification::findOrFail($id);
-        $notification->delete();
+        $result = $this->notificationService->deleteNotification($id);
 
-        return response()->json(['message' => 'Notification deleted successfully']);
+        return response()->json($result);
     }
 
-    // Update notification preferences for authenticated user
+    // Update preferences for authenticated user
     public function updatePreferences(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'preferences' => 'required|array',
             'preferences.email' => 'boolean',
             'preferences.sms' => 'boolean',
@@ -67,12 +64,8 @@ class NotificationController extends Controller
         ]);
 
         $user = Auth::user();
-        $user->notification_preferences = $request->preferences;
-        $user->save();
+        $result = $this->notificationService->updatePreferences($data['preferences'], $user);
 
-        return response()->json([
-            'message' => 'Notification preferences updated successfully.',
-            'notification_preferences' => $user->notification_preferences,
-        ]);
+        return response()->json($result);
     }
 }

@@ -3,51 +3,31 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
-use App\Models\Users;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
+use App\Services\UserService;
+use Illuminate\Support\Facades\Auth;
+
 class UserController extends Controller
 {
- // update user profile picture
+    protected $userService;
 
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+    // update user profile picture
+    public function updateProfilePicture(Request $request)
+    {
+        $request->validate([
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
 
-
-public function updateProfilePicture(Request $request)
-{
-    $request->validate([
-        'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-    ]);
-
-    $user = auth()->user();
-
-    // Delete old profile picture if it exists
-    if ($user->profile_picture) {
-        $oldPath = base_path('../public_html/' . $user->profile_picture);
-        if (File::exists($oldPath)) {
-            File::delete($oldPath);
+        try {
+            $result = $this->userService->updateProfilePicture($request, auth()->user());
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
-    // Save new profile picture
-    $image = $request->file('profile_picture');
-    $filename = time() . '_' . $image->getClientOriginalName();
-    $destinationPath = base_path('../public_html/profile_pictures');
-    $image->move($destinationPath, $filename);
-
-    // Update user record
-    $user->profile_picture = 'profile_pictures/' . $filename;
-    $user->save();
-
-    return response()->json([
-        'message' => 'Profile picture updated successfully.',
-        'profile_picture_url' => asset($user->profile_picture),
-    ]);
-}
 
 
 
@@ -55,7 +35,7 @@ public function updateProfilePicture(Request $request)
     // Get all users
     public function getAllUsers()
     {
-        $users = Users::all();
+        $users = $this->userService->getAllUsers();
         return response()->json([
             'message' => 'All users fetched successfully.',
             'users' => $users,
@@ -65,16 +45,15 @@ public function updateProfilePicture(Request $request)
     // Get user by ID
     public function getUserById($id)
     {
-        $user = Users::find($id);
-
-        if (!$user) {
-            return response()->json(['message' => 'User not found.'], 404);
+        try {
+            $user = $this->userService->getUserById($id);
+            return response()->json([
+                'message' => 'User fetched successfully.',
+                'user' => $user,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getCode() ?: 404);
         }
-
-        return response()->json([
-            'message' => 'User fetched successfully.',
-            'user' => $user,
-        ]);
     }
 
     // Update user
