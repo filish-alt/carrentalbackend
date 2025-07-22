@@ -30,7 +30,7 @@ class AppServiceProvider extends ServiceProvider
     ]);
 
     RateLimiter::for('login', function ($request) {
-        return Limit::perMinutes(5,10)
+        return Limit::perMinutes(5,5)
             ->by($request->input('email') . '|' . $request->ip())
              ->response(function () {
                 return response()->json([

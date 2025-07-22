@@ -57,88 +57,15 @@ class UserController extends Controller
     }
 
     // Update user
-  public function updateUser(Request $request, $id)
-{
-    $user = Users::find($id);
-
-    if (!$user) {
-        return response()->json(['message' => 'User not found.'], 404);
-    }
-
-    $validator = Validator::make($request->all(), [
-        'first_name'       => 'sometimes|required|string|max:255',
-        'middle_name'      => 'sometimes|required|string|max:255',
-        'last_name'        => 'sometimes|required|string|max:255',
-        'email'            => ['sometimes', 'required', 'email', Rule::unique('users')->ignore($user->id)],
-        'phone'            => ['sometimes', 'required', 'regex:/^(09|07)\d{8}$/', Rule::unique('users')->ignore($user->id)],
-        'password'         => 'nullable|string|min:6|confirmed',
-        'driver_licence'   => 'nullable|file|mimes:jpg,jpeg,png,pdf,webp|max:5120',
-        'digital_id'       => 'nullable|file|mimes:jpg,jpeg,png,pdf,webp|max:5120',
-        'passport'         => 'nullable|file|mimes:jpg,jpeg,png,pdf,webp|max:5120',
-
-        'address'          => 'nullable|string|max:255',
-        'city'             => 'nullable|string|max:100',
-        'birth_date'       => 'nullable|date',
-        'role'             => 'nullable|string',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()], 422);
-    }
-
-    // Handle file uploads
-   
-
-       if ($request->hasFile('driver_liscence')) {
-            $file = $request->file('driver_liscence');
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(base_path('../public_html/driver_licences'), $filename);
-            $user->driver_licence = 'driver_licences/' . $filename;
-        }
-
-        if ($request->hasFile('digital_id')) {
-            $file = $request->file('digital_id');
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(base_path('../public_html/digital_ids'), $filename);
-            $user->digital_id = 'digital_ids/' . $filename;
-        }
-
-        if ($request->hasFile('passport')) {
-            $file = $request->file('passport');
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(base_path('../public_html/passport'), $filename);
-            $user->passport = 'passport/' . $filename;
-        }
-        
-        $driverLiscenceUrl = $user->driver_licence ? url($user->driver_licence) : null;
-        $digitalIdUrl = $user->digital_id ? url($user->digital_id) : null;
-        $passportUrl = $user->passport ? url($user->passport) : null;
-
-        Log::info('Incoming request:', $request->all());
-
-    foreach ([
-        'first_name', 'middle_name', 'last_name', 'email', 'phone',
-        'address', 'city', 'birth_date', 'role'
-    ] as $field) {
-        if ($request->has($field)) {
-            $user->$field = $request->$field;
+     public function update(Request $request, $id)
+    {
+        try {
+            $response = $this->userService->updateUser($request, $id);
+            return response()->json($response);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 400);
         }
     }
-
-    $user->save();
-
-    return response()->json([
-                'message' => 'User updated successfully.',
-                'user' => $user,
-                'document_urls' => [
-                            'driver_licence' => $user->driver_licence ? url($user->driver_licence) : null,
-                            'digital_id' => $user->digital_id ? url($user->digital_id) : null,
-                            'passport' => $user->passport ? url($user->passport) : null,
-                        ],
-            ]);
-
-}
-
 
     public function verify2FA(Request $request)
     {
@@ -146,96 +73,41 @@ class UserController extends Controller
             'user_id' => 'required|exists:users,id',
             'otp' => 'required',
         ]);
-    
-        // $storedOtp = Redis::get("2fa:{$request->user_id}");
-    
-        // if (!$storedOtp || $storedOtp !== $request->otp) {
-        //     return response()->json(['error' => 'Invalid or expired OTP'], 400);
-        // }
-    
-        //Redis::del("2fa:{$request->user_id}");
-    
-            $user = Users::find($request->user_id);
 
-                    // Check if OTP matches and not expired
-            if (!$user->two_factor_code || $user->two_factor_code !== $request->otp || now()->greaterThan($user->two_factor_expires_at)) {
-                return response()->json(['error' => 'Invalid or expired OTP'], 400);
-            }
-
-            // Clear OTP fields after successful verification
-            $user->two_factor_code = null;
-            $user->two_factor_expires_at = null;
-            $user->save();
-     
-          $token = $user->createToken('auth_token')->plainTextToken;
-        return response()->json([
-            'message' => 'Two-factor verification successful',
-            'token' => $token,
-        ]);
-    }
-    
-//toggle two factor code
-    public function toggleTwoFactor(Request $request)
-        {
-            $user = auth()->user();
-        
-            $user->two_factor_enabled = !$user->two_factor_enabled;
-            $user->save();
-        
-            return response()->json([
-                'message' => 'Two-factor authentication ' . ($user->two_factor_enabled ? 'enabled' : 'disabled'),
-            ]);
+        try {
+            $response = $this->userService->verify2FA($request->user_id, $request->otp);
+            return response()->json($response);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 400);
         }
-        
-//soft delete
-public function deleteAccount(Request $request)
-{
-    $user = auth()->user();
-    $user->delete(); 
-
-    return response()->json(['message' => 'Your account has been deleted and is pending permanent removal.']);
-}
-
-public function banUser($id)
-{
-    $user = Users::find($id);
-
-    if (!$user) {
-        return response()->json(['message' => 'User not found.'], 404);
     }
 
-    $user->is_banned = true;
-    $user->save();
-
-    return response()->json(['message' => 'User has been banned successfully.']);
-}
-
-public function unbanUser($id)
-{
-    $user = Users::find($id);
-
-    if (!$user) {
-        return response()->json(['message' => 'User not found.'], 404);
+    public function toggleTwoFactor()
+    {
+        $user = auth()->user();
+        return response()->json($this->userService->toggleTwoFactor($user));
     }
 
-    $user->is_banned = false;
-    $user->save();
-
-    return response()->json(['message' => 'User has been unbanned successfully.']);
-}
-
-public function deleteUser($id)
-{
-    $user = Users::find($id);
-
-    if (!$user) {
-        return response()->json(['message' => 'User not found.'], 404);
+    public function deleteAccount()
+    {
+        $user = auth()->user();
+        return response()->json($this->userService->deleteAccount($user));
     }
 
-    $user->delete();
+    public function banUser($id)
+    {
+        return response()->json($this->userService->banUser($id));
+    }
 
-    return response()->json(['message' => 'User has been deleted successfully.']);
-}
+    public function unbanUser($id)
+    {
+        return response()->json($this->userService->unbanUser($id));
+    }
+
+    public function deleteUser($id)
+    {
+        return response()->json($this->userService->deleteUser($id));
+    }
 
 
 }
