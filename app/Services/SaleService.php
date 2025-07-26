@@ -25,6 +25,10 @@ public function createSale(array $data, $request)
         throw new \Exception('Car is not available for sale', 400);
     }
 
+      if ($car->status !== 'available') {
+            throw new \Exception('Car is not available for booking', 400);
+        }
+
     // Prevent buying own car
     if ($car->owner_id === auth()->id()) {
         throw new \Exception("You can't buy your own car", 403);
@@ -40,7 +44,7 @@ public function createSale(array $data, $request)
     $sale = Sale::create([
         'car_id' => $car->id,
         'buyer_id' => auth()->id(),
-        'price' => $car->price_per_day, 
+        'price' => $car->sell_price, 
         'status' => 'pending',
     ]);
   
@@ -80,7 +84,7 @@ public function createSale(array $data, $request)
             'first_name' => auth()->user()->first_name,
             'phone_number' => auth()->user()->phone,
             'tx_ref' => $tx_ref,
-            'callback_url' => url('/api/chapa/callback'),
+            'callback_url' => url('/api/chapa/sale-callback'),
             'return_url' => $returnUrl,
             'customization' => [
                 'title' => 'Sale Payment',

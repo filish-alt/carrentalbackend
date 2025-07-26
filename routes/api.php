@@ -62,6 +62,7 @@ Route::get('/home/{home}/reviews', [HomereviewController::class, 'reviewsForHome
 Route::get('/chapa/callback', [PaymentController::class, 'handleCallback'])->name('api.chapa.callback');
 Route::get('/chapa/listing-callback', [PaymentController::class, 'listingCallback']);
 
+Route::get('/chapa/sale-callback', [PaymentController::class, 'handleSaleCallback']);
 // General Info
 Route::post('/general-info', [LandingContentController::class, 'setGeneralInfo']);
 Route::put('/general-info/{key}', [LandingContentController::class, 'updateGeneralInfo']);

@@ -36,6 +36,31 @@ class PaymentService
 
         throw new \Exception('Payment verification failed', 400);
     }
+     public function handleSaleCallback($tx_ref)
+    {
+        if (!$tx_ref) {
+            throw new \Exception('Transaction reference is missing', 400);
+        }
+
+        $response = Http::withToken(env('CHAPA_SECRET_KEY'))
+            ->get(env('CHAPA_BASE_URL') . "/transaction/verify/{$tx_ref}");
+
+        if ($response->successful() && $response->json('data.status') === 'success') {
+            // Update payment record
+            $payment = Payment::where('tx_ref', $tx_ref)->first();
+
+            if ($payment) {
+                $payment->update(['payment_status' => 'paid']);
+                $payment->sale->update(['status' => 'paid']);
+
+                return ['success' => 'Payment successfully processed'];
+            }
+
+            throw new \Exception('Payment not found', 404);
+        }
+
+        throw new \Exception('Payment verification failed', 400);
+    }
 
     public function handleListingCallback($tx_ref)
     {
