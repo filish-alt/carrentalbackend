@@ -25,9 +25,6 @@ public function createSale(array $data, $request)
         throw new \Exception('Car is not available for sale', 400);
     }
 
-      if ($car->status !== 'available') {
-            throw new \Exception('Car is not available for booking', 400);
-        }
 
     // Prevent buying own car
     if ($car->owner_id === auth()->id()) {
