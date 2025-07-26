@@ -35,5 +35,11 @@ class Payment extends Model
         return $this->belongsTo(HomeBooking::class);
     }
 
+      public function sale()
+    {
+        return $this->belongsTo(Sale::class);
+    }
+
+
 }
 

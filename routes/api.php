@@ -9,6 +9,7 @@ use App\Http\Controllers\VehicleInspectionController;
 use App\Http\Controllers\VehicleCategoryController;
 use App\Http\Controllers\SSOController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\SaleController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\LandingContentController;
 use App\Http\Controllers\ReviewController;
@@ -35,7 +36,7 @@ use Illuminate\Http\Request;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/verify-phone-otp', [AuthController::class, 'verifyPhoneOtp']);
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');;
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
 Route::get('/auth/google', [SSOController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [SSOController::class, 'handleGoogleCallback']);
@@ -45,7 +46,7 @@ Route::get('/redirect/payment', [PaymentController::class, 'handleRedirect']);
 Route::get('/redirect/booking-payment', [PaymentController::class, 'handleRedirectForBooking']);
 
 Route::get('/users/{id}', [UserController::class, 'getUserById']);
-Route::post('/resendOtp', [PasswordResetController::class, 'resendOtp']);
+Route::post('/resendOtp', [PasswordResetController::class, 'resendOtp'])->middleware('throttle:resendOtp');
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 Route::post('/resendOtpPhone', [PasswordResetController::class, 'resendOtpWithIdentifier']);
 Route::post('/send-verification-code', [PasswordResetController::class, 'forgotPassword']);
@@ -118,7 +119,7 @@ Route::middleware('auth:sanctum')->group(function () {
        
         Route::put('/listing-fees', [ListingFeeController::class, 'update']);
         Route::delete('/listing-fees', [ListingFeeController::class, 'destroy']);
-
+        Route::get('/admin/sales', [SaleController::class, 'adminIndex']);
         Route::post('homes/{id}/approve', [HomeController::class, 'approveHome']);
         Route::post('homes/{id}/reject', [HomeController::class, 'rejectHome']);
         Route::post('homes/{id}/block', [HomeController::class, 'blockHome']);
@@ -149,7 +150,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::get('/my-reviews', [ReviewController::class, 'myReviews']);
     Route::get('/my-home-reviews', [ReviewController::class, 'reviewsForMyCars']);
-
+    
+    Route::post('/sales', [SaleController::class, 'store']);
+    Route::get('/sales', [SaleController::class, 'index']);
+    Route::get('/sales/{id}', [SaleController::class, 'show']);
 
     Route::post('/booking', [BookingController::class, 'store']);
     Route::get('/bookings', [BookingController::class, 'index']);            // List user's bookings

@@ -81,10 +81,10 @@ class ReviewService
         }
 
         // Check if user owns the review or owns the car being reviewed
-        $car = Car::find($review->car_id);
-        if ($review->user_id !== auth()->id() && $car->owner_id !== auth()->id()) {
-            throw new \Exception('Unauthorized to delete this review', 403);
-        }
+        // $car = Car::find($review->car_id);
+        // if ($review->user_id !== auth()->id() && $car->owner_id !== auth()->id()) {
+        //     throw new \Exception('Unauthorized to delete this review', 403);
+        // }
 
         $review->delete();
 

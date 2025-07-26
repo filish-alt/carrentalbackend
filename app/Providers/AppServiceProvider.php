@@ -21,7 +21,7 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+public function boot(): void
     {
 
     Relation::morphMap([
@@ -39,6 +39,37 @@ class AppServiceProvider extends ServiceProvider
             });
 
     });
-    }
+
     
+    RateLimiter::for('resendOtp', function ($request) {
+        $key = 'resendOtp:' . $request->ip();
+        $attempts = cache()->get($key . ':attempts', 0);
+        $waitTime = cache()->get($key . ':wait_time', 0);
+
+        if (cache()->has($key . ':locked_until')) {
+            $lockedUntil = cache()->get($key . ':locked_until');
+            if (now()->lessThan($lockedUntil)) {
+                $seconds = now()->diffInSeconds($lockedUntil);
+                return Limit::none()->response(function () use ($seconds) {
+                    return response()->json([
+                        'message' => "Too many attempts. Try again in {$seconds} seconds."
+                    ], 429);
+                });
+            }
+        }
+
+        
+        cache()->increment($key . ':attempts');
+
+        $attempts++;
+     if ($attempts > 3) {
+        $waitTime = $waitTime ? min($waitTime * 2, 3600) : 600; 
+        cache()->put($key . ':wait_time', $waitTime, now()->addSeconds($waitTime));
+        cache()->put($key . ':locked_until', now()->addSeconds($waitTime), now()->addSeconds($waitTime));
+        cache()->put($key . ':attempts', 0, now()->addSeconds($waitTime));
+    }
+
+        return Limit::perMinute(1000); 
+    });
+}
 }
