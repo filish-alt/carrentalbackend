@@ -13,7 +13,7 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\LandingContentController;
 use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\HomereviewController;
+//use App\Http\Controllers\HomereviewController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\VerificationController;
@@ -21,12 +21,12 @@ use Laravel\Socialite\Facades\Socialite;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AdminRegistrationController;
 use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\HomeBookingController;
+//use App\Http\Controllers\HomeBookingController;
 use App\Http\Controllers\ListingFeeController;
 
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
-use App\Http\Controllers\HomeController;
+//use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AuditController;
 use Illuminate\Http\Request;
 
@@ -56,8 +56,8 @@ Route::post('/verify-2fa', [UserController::class, 'verify2FA']);
 Route::get('/reviews', [ReviewController::class, 'index']);
 Route::get('/cars/{car}/reviews', [ReviewController::class, 'reviewsForCar']);
 
-Route::get('/home/reviews', [HomereviewController::class, 'index']);
-Route::get('/home/{home}/reviews', [HomereviewController::class, 'reviewsForHome']);
+//Route::get('/home/reviews', [HomereviewController::class, 'index']);
+//Route::get('/home/{home}/reviews', [HomereviewController::class, 'reviewsForHome']);
 
 Route::get('/chapa/callback', [PaymentController::class, 'handleCallback'])->name('api.chapa.callback');
 Route::get('/chapa/listing-callback', [PaymentController::class, 'listingCallback']);
@@ -90,11 +90,11 @@ Route::get('/cars/{car}/images', [CarController::class, 'getCarImages']);
 
 
 // Homes routes in detail
-Route::get('/homes', [HomeController::class, 'index']);           // List all homes
-Route::get('/homes/{id}', [HomeController::class, 'show']);       // Get home by ID
+//Route::get('/homes', [HomeController::class, 'index']);           // List all homes
+//Route::get('/homes/{id}', [HomeController::class, 'show']);       // Get home by ID
 
-Route::get('homes/{id}/images', [HomeController::class, 'getHomeImages']);
-Route::get('search/homes', [HomeController::class, 'search']);
+//Route::get('homes/{id}/images', [HomeController::class, 'getHomeImages']);
+//Route::get('search/homes', [HomeController::class, 'search']);
 
 
 
@@ -103,9 +103,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/adminregister', [AdminRegistrationController::class, 'register']);
     Route::get('/getalladmin', [AdminRegistrationController::class, 'getAllAdmin']);
 
-    Route::post('/homes', [HomeController::class, 'store']); 
-    Route::put('/homes/{id}', [HomeController::class, 'update']);     // Update home by ID 
-    Route::delete('/homes/{id}', [HomeController::class, 'destroy']);
+   // Route::post('/homes', [HomeController::class, 'store']); 
+   // Route::put('/homes/{id}', [HomeController::class, 'update']);     // Update home by ID 
+   // Route::delete('/homes/{id}', [HomeController::class, 'destroy']);
 
     Route::get('/listing-fees', [ListingFeeController::class, 'index']);
     Route::get('/listing-fees/{id}', [ListingFeeController::class, 'show']);
@@ -121,9 +121,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/listing-fees', [ListingFeeController::class, 'update']);
         Route::delete('/listing-fees', [ListingFeeController::class, 'destroy']);
         Route::get('/admin/sales', [SaleController::class, 'adminIndex']);
-        Route::post('homes/{id}/approve', [HomeController::class, 'approveHome']);
-        Route::post('homes/{id}/reject', [HomeController::class, 'rejectHome']);
-        Route::post('homes/{id}/block', [HomeController::class, 'blockHome']);
+       // Route::post('homes/{id}/approve', [HomeController::class, 'approveHome']);
+       // Route::post('homes/{id}/reject', [HomeController::class, 'rejectHome']);
+       // Route::post('homes/{id}/block', [HomeController::class, 'blockHome']);
         Route::get('admin/audits', [AuditController::class, 'index']);
         Route::delete('admin/review/{id}', [ReviewController::class, 'destroy']);
     });
@@ -143,9 +143,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-reviews', [ReviewController::class, 'myReviews']);
     Route::get('/my-car-reviews', [ReviewController::class, 'reviewsForMyCars']);
 
-    Route::post('/home/reviews', [HomereviewController::class, 'store']);
-    Route::get('/home/my-reviews', [HomereviewController::class, 'myhomeReviews']);
-    Route::get('/home/my-home-reviews', [HomereviewController::class, 'reviewsForMyHomes']);
+   // Route::post('/home/reviews', [HomereviewController::class, 'store']);
+  //  Route::get('/home/my-reviews', [HomereviewController::class, 'myhomeReviews']);
+  //  Route::get('/home/my-home-reviews', [HomereviewController::class, 'reviewsForMyHomes']);
 
     
     Route::post('/reviews', [ReviewController::class, 'store']);
@@ -164,18 +164,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/bookings/admin/{id}', [BookingController::class, 'adminShow']);        // View booking details
     Route::patch('/bookings/admin/{id}/cancel', [BookingController::class, 'adminCancel']); // Cancel booking
 
-    Route::prefix('home-bookings')->controller(HomeBookingController::class)->group(function () {
-        Route::post('/', 'store');
-        Route::get('/', 'index');
-        Route::get('/{id}', 'show');
-        Route::put('/{id}/cancel', 'cancel');
-    });
+    // Route::prefix('home-bookings')->controller(HomeBookingController::class)->group(function () {
+    //     Route::post('/', 'store');
+    //     Route::get('/', 'index');
+    //     Route::get('/{id}', 'show');
+    //     Route::put('/{id}/cancel', 'cancel');
+    // });
 
-    Route::prefix('admin/home-bookings')->controller(HomeBookingController::class)->group(function () {
-        Route::get('/', 'adminIndex');
-        Route::get('/{id}', 'adminShow');
-        Route::put('/{id}/cancel', 'adminCancel');
-    });
+    // Route::prefix('admin/home-bookings')->controller(HomeBookingController::class)->group(function () {
+    //     Route::get('/', 'adminIndex');
+    //     Route::get('/{id}', 'adminShow');
+    //     Route::put('/{id}/cancel', 'adminCancel');
+    // });
 
     Route::get('/users', [UserController::class, 'getAllUsers']);
     Route::post('/users/{id}', [UserController::class, 'updateUser']);
