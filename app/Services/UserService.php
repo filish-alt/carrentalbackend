@@ -7,34 +7,51 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Validator;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+
 
 class UserService
 {
-    public function updateProfilePicture($request, $user)
-    {
-        // Delete old profile picture if it exists
-        if ($user->profile_picture) {
-            $oldPath = base_path('../public_html/' . $user->profile_picture);
-            if (File::exists($oldPath)) {
-                File::delete($oldPath);
-            }
+
+
+public function updateProfilePicture($request, $user)
+{
+    // Delete old profile picture if it exists
+    if ($user->profile_picture) {
+        $oldPath = base_path('../public_html/' . $user->profile_picture);
+        if (File::exists($oldPath)) {
+            File::delete($oldPath);
         }
-
-        // Save new profile picture
-        $image = $request->file('profile_picture');
-        $filename = time() . '_' . $image->getClientOriginalName();
-        $destinationPath = base_path('../public_html/profile_pictures');
-        $image->move($destinationPath, $filename);
-
-        // Update user record
-        $user->profile_picture = 'profile_pictures/' . $filename;
-        $user->save();
-
-        return [
-            'message' => 'Profile picture updated successfully.',
-            'profile_picture_url' => asset($user->profile_picture),
-        ];
     }
+
+    $image = $request->file('profile_picture');
+
+    // Generate new filename as .webp
+    $filename = time() . '_' . pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME) . '.webp';
+    $destinationPath = base_path('../public_html/profile_pictures');
+
+    if (!file_exists($destinationPath)) {
+        mkdir($destinationPath, 0755, true);
+    }
+
+    // Create image manager with GD driver
+    $manager = new ImageManager(new Driver()); 
+
+    // Convert and save image as webp
+    $webpImage = $manager->read($image)->toWebp(80);
+    $webpImage->save("{$destinationPath}/{$filename}");
+
+    // Update user record
+    $user->profile_picture = 'profile_pictures/' . $filename;
+    $user->save();
+
+    return [
+        'message' => 'Profile picture updated successfully.',
+        'profile_picture_url' => asset($user->profile_picture),
+    ];
+}
+
 
     public function getAllUsers()
     {
@@ -80,27 +97,38 @@ class UserService
             throw new \Exception(json_encode($validator->errors()), 422);
         }
 
-        // Handle file uploads
-        if ($request->hasFile('driver_liscence')) {
-            $file = $request->file('driver_liscence');
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(base_path('../public_html/driver_licences'), $filename);
-            $user->driver_licence = 'driver_licences/' . $filename;
-        }
 
-        if ($request->hasFile('digital_id')) {
-            $file = $request->file('digital_id');
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(base_path('../public_html/digital_ids'), $filename);
-            $user->digital_id = 'digital_ids/' . $filename;
-        }
+    $manager = new ImageManager(new Driver()); 
 
-        if ($request->hasFile('passport')) {
-            $file = $request->file('passport');
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(base_path('../public_html/passport'), $filename);
-            $user->passport = 'passport/' . $filename;
+    $imageFields = [
+        'driver_licence' => 'driver_licences',
+        'digital_id' => 'digital_ids',
+        'passport' => 'passport',
+    ];
+
+    foreach ($imageFields as $field => $folder) {
+        if ($request->hasFile($field)) {
+            $file = $request->file($field);
+
+            if ($file->getClientOriginalExtension() !== 'pdf') {
+                $filename = uniqid() . '.webp';
+                $destinationPath = base_path("../public_html/{$folder}");
+
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0755, true);
+                }
+
+                $image = $manager->read($file)->toWebp(90);
+                $image->save("{$destinationPath}/{$filename}");
+
+                $user->$field = "{$folder}/{$filename}";
+            } else {
+                $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(base_path("../public_html/{$folder}"), $filename);
+                $user->$field = "{$folder}/{$filename}";
+            }
         }
+    }
 
         Log::info('Incoming request:', $request->all());
 

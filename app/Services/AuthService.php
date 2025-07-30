@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
-use Intervention\Image\Facades\Image;
 use Illuminate\Http\UploadedFile;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver; 
 
 class AuthService
 {
@@ -68,6 +69,8 @@ class AuthService
     }
 
 
+
+
 private function handleFileUpload(?UploadedFile $file, string $folder): ?string
 {
     if (!$file) return null;
@@ -82,50 +85,36 @@ private function handleFileUpload(?UploadedFile $file, string $folder): ?string
     $filename = uniqid();
 
     if (str_starts_with($mime, 'image/')) {
-        // It's an image, convert to WebP
+        $manager = new ImageManager(new Driver());
+        
         $webpName = $filename . '.webp';
-        $webpImage = Image::make($file)->encode('webp', 80);
-        $webpImage->save("{$destinationPath}/{$webpName}");
+
+        $image = $manager->read($file)->toWebp(80);
+        $image->save("{$destinationPath}/{$webpName}");
+
         return "{$folder}/{$webpName}";
     } else {
-        // Not an image — store as-is (e.g., PDF)
+        // Not an image — store as-is 
         $extension = $file->getClientOriginalExtension();
         $finalName = "{$filename}.{$extension}";
         $file->move($destinationPath, $finalName);
+
         return "{$folder}/{$finalName}";
     }
 }
 
 
+
     public function register(array $data, $request)
     {
-        // Handle file uploads
-        // $digitalIdPath = $request->file('digital_id')
-        //     ? $request->file('digital_id')->move(base_path('../public_html/digital_ids'), uniqid() . '.' 
-        //     . $request->file('digital_id')->getClientOriginalExtension())
-        //     : null;
- 
-        // $driverLiscencePath = $request->file('driver_liscence')
-        //  ? $request->file('driver_liscence')->move(base_path('../public_html/driver_licences'), uniqid() . '.' 
-        //  . $request->file('driver_liscence')->getClientOriginalExtension())
-        //  : null;
-        
-        // $passport = $request->file('passport')
-        //  ? $request->file('passport')->move(base_path('../public_html/passport'), uniqid() . '.' 
-        //  . $request->file('passport')->getClientOriginalExtension())
-        //  : null;
-
-        // $driverLiscenceUrl = $driverLiscencePath ? url('driver_licences/' . basename($driverLiscencePath)) : null;
-        // $digitalIdUrl = $digitalIdPath ? url('digital_ids/' . basename($digitalIdPath)) : null;
-        // $passportUrl = $passport ? url('passport/' . basename($passport)) : null;
 
      $digitalIdPath = $this->handleFileUpload($request->file('digital_id'), 'digital_ids');
     $driverLiscencePath = $this->handleFileUpload($request->file('driver_liscence'), 'driver_licences');
-    $passportPath = $this->handleFileUpload($request->file('passport'), 'passport');
+    $passport = $this->handleFileUpload($request->file('passport'), 'passport');
 
     $digitalIdUrl = $digitalIdPath ? url($digitalIdPath) : null;
     $driverLiscenceUrl = $driverLiscencePath ? url($driverLiscencePath) : null;
-    $passportUrl = $passportPath ? url($passportPath) : null;
+    $passportUrl = $passport ? url($passport) : null;
      
         $otp = rand(100000, 999999);
 

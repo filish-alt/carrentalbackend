@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-use Intervention\Image\Facades\Image;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
+
 
 class CarService
 {
@@ -91,34 +93,22 @@ class CarService
         }
     }
 
-    // private function handleImageUploads($images, $carId)
-    // {
-    //     foreach ($images as $image) {
-    //         $filename = time() . '_' . $image->getClientOriginalName();
-    //         $destinationPath = base_path('../public_html/car_images');
-    //         $image->move($destinationPath, $filename);
-
-    //         CarImage::create([
-    //             'car_id' => $carId,
-    //             'image_path' => 'car_images/' . $filename,
-    //         ]);
-    //     }
-    // }
 private function handleImageUploads($images, $carId)
 {
+  $manager = new ImageManager(new Driver());
+
     foreach ($images as $image) {
         $originalName = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
         $webpFileName = time() . '_' . preg_replace('/\s+/', '_', $originalName) . '.webp';
         $destinationPath = base_path('../public_html/car_images');
 
-        // Ensure the directory exists
         if (!file_exists($destinationPath)) {
             mkdir($destinationPath, 0755, true);
         }
 
-        // Convert image to WebP format and save
-        $webpImage = Image::make($image)->encode('webp', 80); // 80 is quality level
-        $webpImage->save($destinationPath . '/' . $webpFileName);
+        // Convert to WebP and save
+        $webpImage = $manager->read($image)->toWebp(80);
+        $webpImage->save("{$destinationPath}/{$webpFileName}");
 
         // Save image path to DB
         CarImage::create([
@@ -127,6 +117,7 @@ private function handleImageUploads($images, $carId)
         ]);
     }
 }
+
     private function createPlatformPayment($car, $fee, $tx_ref)
     {
         Platformpayment::create([
